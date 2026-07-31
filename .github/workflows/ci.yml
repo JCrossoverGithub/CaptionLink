@@ -1,0 +1,74 @@
+﻿name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+  
+
+
+
+
+
+
+
+
+
+
+  name: Build Windows application
+    runs-on: windows-2025
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore TransGo.Desktop.slnx
+
+      - name: Build application
+        run: dotnet build TransGo.Desktop.slnx --configuration Release --no-restore
+
+      - name: Publish Windows application
+        run: dotnet publish TransGo.Windows/TransGo.Windows.csproj --c
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+onfiguration Release --runtime win-x64 --self-contained false --output artifacts/TransGo-win-x64
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: TransGo-win-x64
+          path: artifacts/TransGo-win-x64
+          if-no-files-found: error
+          retention-days: 14
