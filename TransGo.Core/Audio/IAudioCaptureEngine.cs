@@ -5,6 +5,9 @@ namespace TransGo.Core.Audio;
 
 public interface IAudioCaptureEngine : IDisposable
 {
+
+    event EventHandler<AudioFrameEventArgs>? AudioFrameAvailable;
+
     event EventHandler<AudioCaptureMetricsEventArgs>? MetricsUpdated;
 
     event EventHandler<AudioCaptureStoppedEventArgs>? CaptureStopped;

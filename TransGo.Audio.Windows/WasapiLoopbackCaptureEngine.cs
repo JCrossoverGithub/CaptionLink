@@ -19,7 +19,10 @@ public sealed class WasapiLoopbackCaptureEngine : IAudioCaptureEngine
     private WaveFormat? _captureFormat;
 
     private long _capturedBytes;
+    private long _frameSequence;
     private bool _disposed;
+
+    public event EventHandler<AudioFrameEventArgs>? AudioFrameAvailable;
 
     public event EventHandler<AudioCaptureMetricsEventArgs>? MetricsUpdated;
 
@@ -125,6 +128,7 @@ public sealed class WasapiLoopbackCaptureEngine : IAudioCaptureEngine
                 _capture.RecordingStopped += Capture_RecordingStopped;
 
                 Interlocked.Exchange(ref _capturedBytes, 0);
+                Interlocked.Exchange(ref _frameSequence, 0);
 
                 _capture.StartRecording();
             }
@@ -164,38 +168,110 @@ public sealed class WasapiLoopbackCaptureEngine : IAudioCaptureEngine
         object? sender,
         WaveInEventArgs e)
     {
+        if (e.BytesRecorded <= 0)
+        {
+            return;
+        }
+
+        WaveFormat? captureFormat = _captureFormat;
+
+        if (captureFormat is null)
+        {
+            return;
+        }
+
+        /*
+         * NAudio owns and reuses e.Buffer after this callback returns.
+         * We must copy the bytes before sending them elsewhere.
+         */
+        var audioBytes = new byte[e.BytesRecorded];
+
+        Buffer.BlockCopy(
+            e.Buffer,
+            0,
+            audioBytes,
+            0,
+            e.BytesRecorded);
+
+        long sequence = Interlocked.Increment(
+            ref _frameSequence);
+
         long totalBytes = Interlocked.Add(
             ref _capturedBytes,
             e.BytesRecorded);
+
+        var frame = new AudioFrame(
+            Sequence: sequence,
+            CapturedAt: DateTimeOffset.UtcNow,
+            Data: audioBytes,
+            SampleRate: captureFormat.SampleRate,
+            Channels: captureFormat.Channels,
+            BitsPerSample: captureFormat.BitsPerSample,
+            Encoding: GetSampleEncoding(captureFormat));
+
+        /*
+         * Publishing the frame must happen before any optional
+         * diagnostic calculation can fail.
+         */
+        AudioFrameAvailable?.Invoke(
+            this,
+            new AudioFrameEventArgs(frame));
 
         double levelPercent = 0;
 
         try
         {
-            if (_captureFormat is not null)
-            {
-                levelPercent = CalculatePeakLevel(
-                    e.Buffer,
-                    e.BytesRecorded,
-                    _captureFormat);
-            }
+            levelPercent = CalculatePeakLevel(
+                audioBytes,
+                audioBytes.Length,
+                captureFormat);
         }
         catch (Exception exception)
         {
-            // Meter calculation must never interrupt audio capture.
+            // Meter failure must never interrupt audio delivery.
             Debug.WriteLine(
                 $"TransGo meter calculation failed: {exception}");
         }
 
-        Debug.WriteLine(
-            $"TransGo received {e.BytesRecorded} bytes; total {totalBytes}");
-
-        // Always publish the byte total, even if meter calculation fails.
         MetricsUpdated?.Invoke(
             this,
             new AudioCaptureMetricsEventArgs(
                 levelPercent,
                 totalBytes));
+
+        Debug.WriteLine(
+            $"Frame {frame.Sequence}: " +
+            $"{frame.ByteCount} bytes, " +
+            $"{frame.SampleRate} Hz, " +
+            $"{frame.Channels} channels, " +
+            $"{frame.Encoding}");
+    }
+
+    private static AudioSampleEncoding GetSampleEncoding(
+    WaveFormat format)
+    {
+        if (format.Encoding == WaveFormatEncoding.IeeeFloat)
+        {
+            return AudioSampleEncoding.IeeeFloat;
+        }
+
+        if (format.Encoding == WaveFormatEncoding.Pcm)
+        {
+            return AudioSampleEncoding.PcmInteger;
+        }
+
+        /*
+         * WASAPI shared-mode loopback commonly exposes its mix
+         * format as Extensible with 32-bit floating-point samples.
+         */
+        if (format.Encoding == WaveFormatEncoding.Extensible)
+        {
+            return format.BitsPerSample == 32
+                ? AudioSampleEncoding.IeeeFloat
+                : AudioSampleEncoding.PcmInteger;
+        }
+
+        return AudioSampleEncoding.Unknown;
     }
 
     private static double CalculatePeakLevel(
