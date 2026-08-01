@@ -18,6 +18,7 @@ public partial class MainWindow : Window
     private readonly IAudioCaptureEngine _captureEngine;
     private readonly IAudioFrameNormalizer _audioNormalizer;
     private readonly ITranscriptionEngine _transcriptionEngine;
+    private readonly CaptionOverlayWindow _captionOverlay;
 
     private readonly List<AudioOutputDevice> _audioDevices = new();
 
@@ -26,6 +27,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        _captionOverlay =
+        new CaptionOverlayWindow();
 
         _captureEngine =
             new WasapiLoopbackCaptureEngine();
@@ -161,6 +165,13 @@ public partial class MainWindow : Window
 
             TranscriptText.Text =
                 "Listening for speech…";
+
+            _captionOverlay.ResetCaption();
+
+            if (!_captionOverlay.IsVisible)
+            {
+                _captionOverlay.Show();
+            }
 
             NormalizationText.Text =
                 "Normalized chunks: 0";
@@ -308,6 +319,8 @@ public partial class MainWindow : Window
 
         Dispatcher.BeginInvoke(new Action(() =>
         {
+            string displayText;
+
             if (result.IsFinal)
             {
                 if (!string.IsNullOrWhiteSpace(
@@ -319,17 +332,24 @@ public partial class MainWindow : Window
                 _finalTranscript +=
                     result.Text;
 
-                TranscriptText.Text =
+                displayText =
                     _finalTranscript;
-
-                return;
+            }
+            else
+            {
+                displayText =
+                    string.IsNullOrWhiteSpace(
+                        _finalTranscript)
+                        ? result.Text
+                        : $"{_finalTranscript} {result.Text}";
             }
 
             TranscriptText.Text =
-                string.IsNullOrWhiteSpace(
-                    _finalTranscript)
-                    ? result.Text
-                    : $"{_finalTranscript} {result.Text}";
+                displayText;
+
+            _captionOverlay.SetCaption(
+                displayText,
+                result.IsFinal);
         }));
     }
 
@@ -455,6 +475,7 @@ public partial class MainWindow : Window
 
         _audioNormalizer.Dispose();
         _captureEngine.Dispose();
+        _captionOverlay.Close();
 
         base.OnClosed(e);
 
