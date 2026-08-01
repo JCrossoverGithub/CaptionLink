@@ -68,9 +68,14 @@
                            Foreground="#AAB6CA"/>
 
                 <TextBlock x:Name="BytesText"
-                           Text="Captured: 0 bytes"
-                           Margin="0,4,0,22"
-                           Foreground="#AAB6CA"/>
+               Text="Captured: 0 bytes"
+               Margin="0,4,0,0"
+               Foreground="#AAB6CA"/>
+
+              <TextBlock x:Name="NormalizationText"
+               Text="Normalized chunks: 0"
+               Margin="0,4,0,22"
+               Foreground="#AAB6CA"/>
 
                 <StackPanel Orientation="Horizontal">
                     <Button x:Name="StartButton"

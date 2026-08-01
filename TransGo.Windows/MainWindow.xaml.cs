@@ -4,12 +4,16 @@ using System.Linq;
 using System.Windows;
 using TransGo.Audio.Windows;
 using TransGo.Core.Audio;
+using System.Diagnostics;
+using TransGo.Audio.Processing;
 
 namespace TransGo.Windows;
 
 public partial class MainWindow : Window
 {
     private readonly IAudioCaptureEngine _captureEngine;
+
+    private readonly IAudioFrameNormalizer _audioNormalizer;
 
     private readonly List<AudioOutputDevice> _audioDevices = new();
 
@@ -18,6 +22,14 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         _captureEngine = new WasapiLoopbackCaptureEngine();
+
+        _audioNormalizer = new Pcm16MonoFrameNormalizer();
+
+        _captureEngine.AudioFrameAvailable +=
+        CaptureEngine_AudioFrameAvailable;
+
+        _audioNormalizer.ChunkAvailable +=
+        AudioNormalizer_ChunkAvailable;
 
         _captureEngine.MetricsUpdated +=
             CaptureEngine_MetricsUpdated;
@@ -95,6 +107,46 @@ public partial class MainWindow : Window
         LoadOutputDevices();
     }
 
+    private void CaptureEngine_AudioFrameAvailable(
+    object? sender,
+    AudioFrameEventArgs e)
+    {
+        try
+        {
+            _audioNormalizer.Process(e.Frame);
+        }
+        catch (Exception exception)
+        {
+            /*
+             * Normalization errors must not escape into the
+             * WASAPI callback and interrupt desktop capture.
+             */
+            Debug.WriteLine(
+                $"Audio normalization failed: {exception}");
+        }
+    }
+
+    private void AudioNormalizer_ChunkAvailable(
+    object? sender,
+    TranscriptionAudioChunkEventArgs e)
+    {
+        TranscriptionAudioChunk chunk = e.Chunk;
+
+        Debug.WriteLine(
+            $"Normalized chunk {chunk.Sequence}: " +
+            $"{chunk.ByteCount} bytes, " +
+            $"{chunk.SampleRate} Hz, " +
+            $"{chunk.Duration.TotalMilliseconds:0} ms");
+
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            NormalizationText.Text =
+                $"Normalized chunks: {chunk.Sequence:N0} · " +
+                $"Last: {chunk.ByteCount:N0} bytes · " +
+                $"{chunk.Duration.TotalMilliseconds:0} ms";
+        }));
+    }
+
     private void StartButton_Click(
         object sender,
         RoutedEventArgs e)
@@ -118,6 +170,9 @@ public partial class MainWindow : Window
 
         try
         {
+            _audioNormalizer.Reset();
+            NormalizationText.Text = "Normalized chunks: 0";
+
             _captureEngine.Start(selectedDevice.Id);
 
             StatusText.Text =
@@ -213,12 +268,21 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        _captureEngine.AudioFrameAvailable -=
+            CaptureEngine_AudioFrameAvailable;
+
+        _audioNormalizer.ChunkAvailable -=
+            AudioNormalizer_ChunkAvailable;
+
         _captureEngine.MetricsUpdated -=
             CaptureEngine_MetricsUpdated;
 
         _captureEngine.CaptureStopped -=
             CaptureEngine_CaptureStopped;
 
+        _captureEngine.Dispose();
+
+        _audioNormalizer.Dispose();
         _captureEngine.Dispose();
 
         base.OnClosed(e);

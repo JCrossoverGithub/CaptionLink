@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="TransGo.Audio.Processing/TransGo.Audio.Processing.csproj" Id="dc07361b-573f-4a16-b5ed-edaabfaeca05" />
   <Project Path="TransGo.Audio.Windows/TransGo.Audio.Windows.csproj" />
   <Project Path="TransGo.Core/TransGo.Core.csproj" />
   <Project Path="TransGo.Windows/TransGo.Windows.csproj" />
