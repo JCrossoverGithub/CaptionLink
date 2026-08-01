@@ -9,7 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NAudio" Version="2.3.0" />
+    <ProjectReference Include="..\TransGo.Core\TransGo.Core.csproj" />
+    <ProjectReference Include="..\TransGo.Audio.Windows\TransGo.Audio.Windows.csproj" />
   </ItemGroup>
 
 </Project>

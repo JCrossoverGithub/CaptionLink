@@ -1,193 +1,226 @@
 ﻿using System;
-using System.Threading;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
-using System.Windows.Threading;
-using NAudio.CoreAudioApi;
-using NAudio.Wave;
+using TransGo.Audio.Windows;
+using TransGo.Core.Audio;
 
-namespace TransGo.Windows
+namespace TransGo.Windows;
+
+public partial class MainWindow : Window
 {
-    public partial class MainWindow : Window
+    private readonly IAudioCaptureEngine _captureEngine;
+
+    private readonly List<AudioOutputDevice> _audioDevices = new();
+
+    public MainWindow()
     {
-        private WasapiLoopbackCapture? _capture;
-        private MMDeviceEnumerator? _deviceEnumerator;
-        private MMDevice? _outputDevice;
+        InitializeComponent();
 
-        private readonly DispatcherTimer _meterTimer;
-        private long _capturedBytes;
+        _captureEngine = new WasapiLoopbackCaptureEngine();
 
-        public MainWindow()
+        _captureEngine.MetricsUpdated +=
+            CaptureEngine_MetricsUpdated;
+
+        _captureEngine.CaptureStopped +=
+            CaptureEngine_CaptureStopped;
+
+        LoadOutputDevices();
+    }
+
+    private void LoadOutputDevices()
+    {
+        string? previouslySelectedId =
+            (OutputDeviceComboBox.SelectedItem
+                as AudioOutputDevice)?.Id;
+
+        OutputDeviceComboBox.ItemsSource = null;
+        _audioDevices.Clear();
+
+        try
         {
-            InitializeComponent();
+            IReadOnlyList<AudioOutputDevice> devices =
+                _captureEngine.GetOutputDevices();
 
-            _meterTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(50)
-            };
+            _audioDevices.AddRange(devices);
 
-            _meterTimer.Tick += MeterTimer_Tick;
+            OutputDeviceComboBox.ItemsSource =
+                _audioDevices;
+
+            AudioOutputDevice? selectedDevice =
+                _audioDevices.FirstOrDefault(
+                    device =>
+                        device.Id == previouslySelectedId)
+                ?? _audioDevices.FirstOrDefault(
+                    device => device.IsDefault)
+                ?? _audioDevices.FirstOrDefault();
+
+            OutputDeviceComboBox.SelectedItem =
+                selectedDevice;
+
+            bool devicesAvailable =
+                selectedDevice is not null;
+
+            StartButton.IsEnabled =
+                devicesAvailable;
+
+            StatusText.Text = devicesAvailable
+                ? "Select a device and start listening"
+                : "No active audio output devices found";
+        }
+        catch (Exception exception)
+        {
+            StartButton.IsEnabled = false;
+
+            StatusText.Text =
+                "Could not load audio devices";
+
+            MessageBox.Show(
+                $"TransGo could not list the available audio devices.\n\n{exception.Message}",
+                "Audio device error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
+    private void RefreshDevicesButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (_captureEngine.IsCapturing)
+        {
+            return;
         }
 
-        private void StartButton_Click(object sender, RoutedEventArgs e)
+        LoadOutputDevices();
+    }
+
+    private void StartButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (_captureEngine.IsCapturing)
         {
-            if (_capture is not null)
+            return;
+        }
+
+        if (OutputDeviceComboBox.SelectedItem
+            is not AudioOutputDevice selectedDevice)
+        {
+            MessageBox.Show(
+                "Select an audio output device first.",
+                "No device selected",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            return;
+        }
+
+        try
+        {
+            _captureEngine.Start(selectedDevice.Id);
+
+            StatusText.Text =
+                $"Listening to: {selectedDevice.Name}";
+
+            StartButton.IsEnabled = false;
+            StopButton.IsEnabled = true;
+
+            OutputDeviceComboBox.IsEnabled = false;
+            RefreshDevicesButton.IsEnabled = false;
+        }
+        catch (Exception exception)
+        {
+            RestoreStoppedControls();
+
+            MessageBox.Show(
+                $"TransGo could not start desktop audio capture.\n\n{exception.Message}",
+                "Audio capture error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
+    private void StopButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (!_captureEngine.IsCapturing)
+        {
+            return;
+        }
+
+        StopButton.IsEnabled = false;
+        StatusText.Text = "Stopping…";
+
+        _captureEngine.Stop();
+    }
+
+    private void CaptureEngine_MetricsUpdated(
+        object? sender,
+        AudioCaptureMetricsEventArgs e)
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            AudioLevelMeter.Value =
+                e.LevelPercent;
+
+            LevelText.Text =
+                $"Audio level: {e.LevelPercent:0}%";
+
+            BytesText.Text =
+                $"Captured: {e.CapturedBytes:N0} bytes";
+        }));
+    }
+
+    private void CaptureEngine_CaptureStopped(
+        object? sender,
+        AudioCaptureStoppedEventArgs e)
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            RestoreStoppedControls();
+
+            if (e.Error is null)
             {
+                StatusText.Text = "Stopped";
                 return;
             }
 
-            try
-            {
-                _deviceEnumerator = new MMDeviceEnumerator();
+            StatusText.Text =
+                "Capture stopped because of an error";
 
-                _outputDevice = _deviceEnumerator.GetDefaultAudioEndpoint(
-                    DataFlow.Render,
-                    Role.Multimedia);
+            MessageBox.Show(
+                e.Error.Message,
+                "Audio capture stopped",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }));
+    }
 
-                _capture = new WasapiLoopbackCapture(_outputDevice);
+    private void RestoreStoppedControls()
+    {
+        AudioLevelMeter.Value = 0;
+        LevelText.Text = "Audio level: 0%";
 
-                _capture.DataAvailable += Capture_DataAvailable;
-                _capture.RecordingStopped += Capture_RecordingStopped;
+        StartButton.IsEnabled =
+            _audioDevices.Count > 0;
 
-                Interlocked.Exchange(ref _capturedBytes, 0);
+        StopButton.IsEnabled = false;
+        OutputDeviceComboBox.IsEnabled = true;
+        RefreshDevicesButton.IsEnabled = true;
+    }
 
-                _capture.StartRecording();
-                _meterTimer.Start();
+    protected override void OnClosed(EventArgs e)
+    {
+        _captureEngine.MetricsUpdated -=
+            CaptureEngine_MetricsUpdated;
 
-                StatusText.Text = $"Listening to: {_outputDevice.FriendlyName}";
-                StartButton.IsEnabled = false;
-                StopButton.IsEnabled = true;
-            }
-            catch (Exception ex)
-            {
-                CleanupCapture();
+        _captureEngine.CaptureStopped -=
+            CaptureEngine_CaptureStopped;
 
-                MessageBox.Show(
-                    $"TransGo could not start desktop audio capture.\n\n{ex.Message}",
-                    "Audio capture error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-            }
-        }
+        _captureEngine.Dispose();
 
-        private void Capture_DataAvailable(
-            object? sender,
-            WaveInEventArgs e)
-        {
-            // This confirms that actual desktop-audio bytes are arriving.
-            Interlocked.Add(ref _capturedBytes, e.BytesRecorded);
-        }
-
-        private void MeterTimer_Tick(
-            object? sender,
-            EventArgs e)
-        {
-            if (_outputDevice is null)
-            {
-                return;
-            }
-
-            try
-            {
-                float peakLevel =
-                    _outputDevice.AudioMeterInformation.MasterPeakValue;
-
-                double percentage = Math.Clamp(
-                    peakLevel * 100.0,
-                    0,
-                    100);
-
-                long byteCount =
-                    Interlocked.Read(ref _capturedBytes);
-
-                AudioLevelMeter.Value = percentage;
-                LevelText.Text = $"Audio level: {percentage:0}%";
-                BytesText.Text = $"Captured: {byteCount:N0} bytes";
-            }
-            catch
-            {
-                // The output device may temporarily disappear when
-                // headphones or other audio devices are changed.
-            }
-        }
-
-        private void StopButton_Click(
-            object sender,
-            RoutedEventArgs e)
-        {
-            if (_capture is null)
-            {
-                return;
-            }
-
-            StopButton.IsEnabled = false;
-            StatusText.Text = "Stopping…";
-
-            _capture.StopRecording();
-        }
-
-        private void Capture_RecordingStopped(
-            object? sender,
-            StoppedEventArgs e)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                CleanupCapture();
-
-                AudioLevelMeter.Value = 0;
-                LevelText.Text = "Audio level: 0%";
-
-                StartButton.IsEnabled = true;
-                StopButton.IsEnabled = false;
-
-                if (e.Exception is null)
-                {
-                    StatusText.Text = "Stopped";
-                }
-                else
-                {
-                    StatusText.Text = "Capture stopped because of an error";
-
-                    MessageBox.Show(
-                        e.Exception.Message,
-                        "Audio capture stopped",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-                }
-            });
-        }
-
-        private void CleanupCapture()
-        {
-            _meterTimer.Stop();
-
-            if (_capture is not null)
-            {
-                _capture.DataAvailable -= Capture_DataAvailable;
-                _capture.RecordingStopped -= Capture_RecordingStopped;
-                _capture.Dispose();
-                _capture = null;
-            }
-
-            _outputDevice?.Dispose();
-            _outputDevice = null;
-
-            _deviceEnumerator?.Dispose();
-            _deviceEnumerator = null;
-        }
-
-        protected override void OnClosed(EventArgs e)
-        {
-            try
-            {
-                _capture?.StopRecording();
-            }
-            catch
-            {
-                // The capture device may already be stopped.
-            }
-
-            CleanupCapture();
-            base.OnClosed(e);
-        }
+        base.OnClosed(e);
     }
 }
