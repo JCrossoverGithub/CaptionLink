@@ -9,8 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TransGo.Audio.Processing\TransGo.Audio.Processing.csproj" />
     <ProjectReference Include="..\TransGo.Core\TransGo.Core.csproj" />
     <ProjectReference Include="..\TransGo.Audio.Windows\TransGo.Audio.Windows.csproj" />
+    <ProjectReference Include="..\TransGo.Speech.Google\TransGo.Speech.Google.csproj" />
   </ItemGroup>
 
 </Project>
