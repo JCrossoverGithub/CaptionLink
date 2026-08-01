@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="TransGo.Audio.Windows/TransGo.Audio.Windows.csproj" />
+  <Project Path="TransGo.Core/TransGo.Core.csproj" />
   <Project Path="TransGo.Windows/TransGo.Windows.csproj" />
 </Solution>
