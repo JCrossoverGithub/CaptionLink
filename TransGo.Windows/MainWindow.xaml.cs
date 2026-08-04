@@ -11,6 +11,7 @@ using TransGo.Core.Audio;
 using TransGo.Core.Transcription;
 using TransGo.Speech.Google;
 using TransGo.Speech.Sherpa;
+using TransGo.Speech.Parakeet;
 
 namespace TransGo.Windows;
 
@@ -69,17 +70,41 @@ public partial class MainWindow : Window
                 "The selected provider has no name.");
     }
 
-    private ITranscriptionEngine
-        CreateSelectedTranscriptionEngine()
+    private ITranscriptionEngine CreateSelectedTranscriptionEngine()
     {
-        string providerName =
-            GetSelectedProviderName();
+        if (
+            TranscriptionProviderComboBox.SelectedItem
+            is not ComboBoxItem selectedItem)
+        {
+            throw new InvalidOperationException(
+                "Select a transcription provider.");
+        }
 
-        return providerName.StartsWith(
-            "Local",
-            StringComparison.OrdinalIgnoreCase)
-                ? new SherpaStreamingTranscriptionEngine()
-                : new GoogleStreamingTranscriptionEngine();
+        string providerId =
+            selectedItem.Tag?.ToString() ??
+            string.Empty;
+
+        return providerId switch
+        {
+            "sherpa-streaming" =>
+                new SherpaStreamingTranscriptionEngine(),
+
+            "hybrid" =>
+                new HybridTranscriptionEngine(),
+
+            "whisper-turbo" =>
+                new WhisperTurboTranscriptionEngine(),
+
+            "parakeet" =>
+                new ParakeetStreamingTranscriptionEngine(),
+
+            "google" =>
+                new GoogleStreamingTranscriptionEngine(),
+
+            _ =>
+                throw new InvalidOperationException(
+                    $"Unknown transcription provider: {providerId}")
+        };
     }
 
     private void LoadOutputDevices()

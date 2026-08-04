@@ -1,0 +1,346 @@
+
+[NeMo I 2026-08-04 09:24:04 rnnt_models:226] Using RNNT Loss : warprnnt_numba
+    Loss warprnnt_numba_kwargs: None
+[NeMo I 2026-08-04 09:24:04 rnnt_models:226] Using RNNT Loss : warprnnt_numba
+    Loss warprnnt_numba_kwargs: None
+[NeMo I 2026-08-04 09:24:04 rnnt_models:226] Using RNNT Loss : warprnnt_numba
+    Loss warprnnt_numba_kwargs: None
+[NeMo I 2026-08-04 09:24:07 save_restore_connector:287] Model EncDecRNNTBPEModel was successfully restored from /home/thede/.cache/huggingface/hub/models--nvidia--parakeet-unified-en-0.6b/snapshots/fe53cd885760c96b6a5f51a0bfd362cb4584a98b/parakeet-unified-en-0.6b.nemo.
+Model loaded in 14.62 seconds.
+Transcribing...
+[NeMo W 2026-08-04 09:24:07 dataloader:920] The following configuration keys are ignored by Lhotse dataloader: use_start_end_token
+[NeMo W 2026-08-04 09:24:07 dataloader:566] You are using a non-tarred dataset and requested tokenization during data sampling (pretokenize=True). This will cause the tokenization to happen in the main (GPU) process,possibly impacting the training speed if your tokenizer is very large.If the impact is noticable, set pretokenize=False in dataloader config.(note: that will disable token-per-second filtering and 2D bucketing features)
+Transcribing: 1it [00:01,  1.37s/it]
+
+Results
+-------
+Model load time: 14.62 seconds
+Decode time: 1.40 seconds
+Real-time factor: 0.052
+Peak allocated VRAM: 4.65 GB
+
+Transcript
+----------
+And I was like, just relax, bro. I'll be back. There was a fucking Dodge Durango in the parking lot. I didn't know who it was. Yeah, that's how I was. You could have got him killed, dude. Nah, dude, it wasn't like that. But then some guy, his dude across the street, true. Storing drugs at a guy's house would get him killed. True. It was for like four hours. He'd be like, yo, what are you doing here? Jimmy. Oh, no. It's just pot. Yeah, he'd be in the middle of cheering for the Eagles. Oh, yeah, the birds are on.
+(.venv) thede@MAINPC:~/transgo-parakeet-benchmark$ mkdir -p ~/transgo-parakeet-benchmark/streaming-input
+(.venv) thede@MAINPC:~/transgo-parakeet-benchmark$ cp ~/transgo-parakeet-benchmark/difficult-test.wav ~/transgo-parakeet-benchmark/streaming-input/
+(.venv) thede@MAINPC:~/transgo-parakeet-benchmark$ cd ~/NeMo-Speech
+(.venv) thede@MAINPC:~/NeMo-Speech$ python examples/asr/asr_chunked_inference/rnnt/speech_to_text_streaming_infer_rnnt.py pretrained_name=nvidia/parakeet-unified-en-0.6b model_path=null audio_dir=/home/thede/transgo-parakeet-benchmark/streaming-input output_filename=/home/thede/transgo-parakeet-benchmark/parakeet-streaming-560ms.json left_context_secs=5.6 chunk_secs=0.16 right_context_secs=0.40 att_context_size_as_chunk=true batch_size=1 cuda=0 compute_dtype=float16 calculate_wer=false calculate_rtfx=true
+OneLogger: Setting error_handling_strategy to DISABLE_QUIETLY_AND_REPORT_METRIC_ERROR for rank (rank=0) with OneLogger disabled. To override: explicitly set error_handling_strategy parameter.
+No exporters were provided. This means that no telemetry data will be collected.
+[NeMo I 2026-08-04 09:27:27 speech_to_text_streaming_infer_rnnt:188] Hydra config: model_path: null
+    pretrained_name: nvidia/parakeet-unified-en-0.6b
+    audio_dir: /home/thede/transgo-parakeet-benchmark/streaming-input
+    dataset_manifest: null
+    sort_by_duration: true
+    output_filename: /home/thede/transgo-parakeet-benchmark/parakeet-streaming-560ms.json
+    batch_size: 1
+    num_workers: 0
+    append_pred: false
+    pred_name_postfix: null
+    random_seed: null
+    chunk_secs: 0.16
+    left_context_secs: 5.6
+    right_context_secs: 0.4
+    att_context_size_as_chunk: true
+    cuda: 0
+    allow_mps: true
+    compute_dtype: float16
+    matmul_precision: high
+    audio_type: wav
+    overwrite_transcripts: true
+    decoding:
+      model_type: rnnt
+      strategy: greedy_batch
+      compute_hypothesis_token_set: false
+      preserve_alignments: null
+      tdt_include_token_duration: null
+      confidence_cfg:
+        preserve_frame_confidence: false
+        preserve_token_confidence: false
+        preserve_word_confidence: false
+        exclude_blank: true
+        aggregation: min
+        tdt_include_duration: false
+        method_cfg:
+          name: entropy
+          entropy_type: tsallis
+          alpha: 0.33
+          entropy_norm: exp
+          temperature: DEPRECATED
+      fused_batch_size: null
+      compute_timestamps: null
+      compute_langs: false
+      word_seperator: ' '
+      segment_seperators:
+      - .
+      - '!'
+      - '?'
+      segment_gap_threshold: null
+      rnnt_timestamp_type: all
+      greedy:
+        max_symbols_per_step: 10
+        preserve_alignments: false
+        preserve_frame_confidence: false
+        tdt_include_token_duration: false
+        tdt_include_duration_confidence: false
+        confidence_method_cfg:
+          name: entropy
+          entropy_type: tsallis
+          alpha: 0.33
+          entropy_norm: exp
+          temperature: DEPRECATED
+        loop_labels: true
+        use_cuda_graph_decoder: true
+        ngram_lm_model: null
+        ngram_lm_alpha: 0.0
+        boosting_tree:
+          model_path: null
+          key_phrases_file: null
+          key_phrases_list: null
+          key_phrase_items_list: null
+          context_score: 1.0
+          depth_scaling: 2.0
+          unk_score: 0.0
+          final_eos_score: 1.0
+          score_per_phrase: 0.0
+          source_lang: en
+          use_triton: true
+          uniform_weights: false
+          use_bpe_dropout: false
+          num_of_transcriptions: 5
+          bpe_alpha: 0.3
+        boosting_tree_alpha: 0.0
+        enable_per_stream_biasing: false
+      beam:
+        beam_size: 4
+        search_type: default
+        score_norm: true
+        return_best_hypothesis: true
+        tsd_max_sym_exp_per_step: 50
+        alsd_max_target_len: 1.0
+        nsc_max_timesteps_expansion: 1
+        nsc_prefix_alpha: 1
+        maes_num_steps: 2
+        maes_prefix_alpha: 1
+        maes_expansion_gamma: 2.3
+        maes_expansion_beta: 2
+        language_model: null
+        softmax_temperature: 1.0
+        preserve_alignments: false
+        ngram_lm_model: null
+        ngram_lm_alpha: 0.0
+        boosting_tree:
+          model_path: null
+          key_phrases_file: null
+          key_phrases_list: null
+          key_phrase_items_list: null
+          context_score: 1.0
+          depth_scaling: 2.0
+          unk_score: 0.0
+          final_eos_score: 1.0
+          score_per_phrase: 0.0
+          source_lang: en
+          use_triton: true
+          uniform_weights: false
+          use_bpe_dropout: false
+          num_of_transcriptions: 5
+          bpe_alpha: 0.3
+        boosting_tree_alpha: 0.0
+        hat_subtract_ilm: false
+        hat_ilm_weight: 0.0
+        max_symbols_per_step: 10
+        blank_lm_score_mode: LM_WEIGHTED_FULL
+        pruning_mode: LATE
+        allow_cuda_graphs: true
+        enable_per_stream_biasing: false
+        preserve_frame_confidence: false
+        tdt_include_duration_confidence: false
+        confidence_method_cfg:
+          name: entropy
+          entropy_type: tsallis
+          alpha: 0.33
+          entropy_norm: exp
+          temperature: DEPRECATED
+      temperature: 1.0
+      durations: []
+      big_blank_durations: []
+      strip_lang_tags: false
+      lang_tag_pattern: null
+    use_per_stream_biasing: false
+    simulated: false
+    timestamps: false
+    confidence: false
+    calculate_wer: false
+    clean_groundtruth_text: false
+    langid: en
+    use_cer: false
+    calculate_rtfx: true
+
+[NeMo I 2026-08-04 09:27:27 speech_to_text_streaming_infer_rnnt:212] Inference will be done on device : cuda:0 with compute_dtype: torch.float16
+[NeMo I 2026-08-04 09:27:33 mixins:194] Tokenizer SentencePieceTokenizer initialized with 1024 tokens
+[NeMo W 2026-08-04 09:27:33 modelPT:175] If you intend to do training or fine-tuning, please call the ModelPT.setup_training_data() method and provide a valid configuration file to setup the train data loader.
+    Train config :
+    use_lhotse: true
+    skip_missing_manifest_entries: true
+    input_cfg: null
+    manifest_filepath: null
+    sample_rate: 16000
+    batch_size: 16
+    shuffle: true
+    num_workers: 8
+    pin_memory: true
+    max_duration: 40.0
+    min_duration: 0.1
+    text_field: answer
+    batch_duration: null
+    use_bucketing: true
+    max_tps: null
+    bucket_duration_bins: null
+    bucket_batch_size: null
+    num_buckets: null
+    bucket_buffer_size: null
+    shuffle_buffer_size: null
+    tarred_audio_filepaths: null
+    augmentor: null
+
+[NeMo I 2026-08-04 09:27:37 rnnt_models:226] Using RNNT Loss : warprnnt_numba
+    Loss warprnnt_numba_kwargs: None
+[NeMo I 2026-08-04 09:27:37 rnnt_models:226] Using RNNT Loss : warprnnt_numba
+    Loss warprnnt_numba_kwargs: None
+[NeMo I 2026-08-04 09:27:37 rnnt_models:226] Using RNNT Loss : warprnnt_numba
+    Loss warprnnt_numba_kwargs: None
+[NeMo I 2026-08-04 09:27:40 save_restore_connector:287] Model EncDecRNNTBPEModel was successfully restored from /home/thede/.cache/huggingface/hub/models--nvidia--parakeet-unified-en-0.6b/snapshots/fe53cd885760c96b6a5f51a0bfd362cb4584a98b/parakeet-unified-en-0.6b.nemo.
+[NeMo I 2026-08-04 09:27:40 rnnt_models:226] Using RNNT Loss : warprnnt_numba
+    Loss warprnnt_numba_kwargs: None
+[NeMo I 2026-08-04 09:27:40 rnnt_decoding:1040] Joint fused batch size <= 0; Will temporarily disable fused batch step in the Joint.
+[NeMo I 2026-08-04 09:27:40 rnnt_bpe_models:436] Changed decoding strategy to
+    model_type: rnnt
+    strategy: greedy_batch
+    compute_hypothesis_token_set: false
+    preserve_alignments: null
+    tdt_include_token_duration: false
+    confidence_cfg:
+      preserve_frame_confidence: false
+      preserve_token_confidence: false
+      preserve_word_confidence: false
+      exclude_blank: true
+      aggregation: min
+      tdt_include_duration: false
+      method_cfg:
+        name: entropy
+        entropy_type: tsallis
+        alpha: 0.33
+        entropy_norm: exp
+        temperature: DEPRECATED
+    fused_batch_size: -1
+    compute_timestamps: null
+    compute_langs: false
+    word_seperator: ' '
+    segment_seperators:
+    - .
+    - '!'
+    - '?'
+    segment_gap_threshold: null
+    rnnt_timestamp_type: all
+    greedy:
+      max_symbols_per_step: 10
+      preserve_alignments: false
+      preserve_frame_confidence: false
+      tdt_include_token_duration: false
+      tdt_include_duration_confidence: false
+      confidence_method_cfg:
+        name: entropy
+        entropy_type: tsallis
+        alpha: 0.33
+        entropy_norm: exp
+        temperature: DEPRECATED
+      loop_labels: true
+      use_cuda_graph_decoder: true
+      ngram_lm_model: null
+      ngram_lm_alpha: 0.0
+      boosting_tree:
+        model_path: null
+        key_phrases_file: null
+        key_phrases_list: null
+        key_phrase_items_list: null
+        context_score: 1.0
+        depth_scaling: 2.0
+        unk_score: 0.0
+        final_eos_score: 1.0
+        score_per_phrase: 0.0
+        source_lang: en
+        use_triton: true
+        uniform_weights: false
+        use_bpe_dropout: false
+        num_of_transcriptions: 5
+        bpe_alpha: 0.3
+      boosting_tree_alpha: 0.0
+      enable_per_stream_biasing: false
+    beam:
+      beam_size: 4
+      search_type: default
+      score_norm: true
+      return_best_hypothesis: true
+      tsd_max_sym_exp_per_step: 50
+      alsd_max_target_len: 1.0
+      nsc_max_timesteps_expansion: 1
+      nsc_prefix_alpha: 1
+      maes_num_steps: 2
+      maes_prefix_alpha: 1
+      maes_expansion_gamma: 2.3
+      maes_expansion_beta: 2
+      language_model: null
+      softmax_temperature: 1.0
+      preserve_alignments: false
+      ngram_lm_model: null
+      ngram_lm_alpha: 0.0
+      boosting_tree:
+        model_path: null
+        key_phrases_file: null
+        key_phrases_list: null
+        key_phrase_items_list: null
+        context_score: 1.0
+        depth_scaling: 2.0
+        unk_score: 0.0
+        final_eos_score: 1.0
+        score_per_phrase: 0.0
+        source_lang: en
+        use_triton: true
+        uniform_weights: false
+        use_bpe_dropout: false
+        num_of_transcriptions: 5
+        bpe_alpha: 0.3
+      boosting_tree_alpha: 0.0
+      hat_subtract_ilm: false
+      hat_ilm_weight: 0.0
+      max_symbols_per_step: 10
+      blank_lm_score_mode: LM_WEIGHTED_FULL
+      pruning_mode: LATE
+      allow_cuda_graphs: true
+      enable_per_stream_biasing: false
+      preserve_frame_confidence: false
+      tdt_include_duration_confidence: false
+      confidence_method_cfg:
+        name: entropy
+        entropy_type: tsallis
+        alpha: 0.33
+        entropy_norm: exp
+        temperature: DEPRECATED
+    temperature: 1.0
+    durations: []
+    big_blank_durations: []
+    strip_lang_tags: false
+    lang_tag_pattern: null
+
+[NeMo W 2026-08-04 09:27:44 conformer_encoder:995] att_context_size=[70, 2, 5] is not among the list of the supported look-aheads: [[-1, -1, -1]]
+[NeMo I 2026-08-04 09:27:44 speech_to_text_streaming_infer_rnnt:353] Corrected contexts (sec): Left 5.60, Chunk 0.16, Right 0.40
+[NeMo I 2026-08-04 09:27:44 speech_to_text_streaming_infer_rnnt:359] Corrected contexts (subsampled encoder frames): Left 70 - Chunk 2 - Right 5
+[NeMo I 2026-08-04 09:27:44 speech_to_text_streaming_infer_rnnt:360] Corrected contexts (in audio samples): Left 89600 - Chunk 2560 - Right 6400
+[NeMo I 2026-08-04 09:27:44 speech_to_text_streaming_infer_rnnt:362] Theoretical latency: 0.56 seconds
+100%|████████████████████████████████████████████████████████████| 1/1 [00:47<00:00, 47.82s/it]
+[NeMo I 2026-08-04 09:28:32 speech_to_text_streaming_infer_rnnt:599] Finished writing predictions to /home/thede/transgo-parakeet-benchmark/parakeet-streaming-560ms.json!
+[NeMo I 2026-08-04 09:28:32 speech_to_text_streaming_infer_rnnt:607] RTFx: 0.55
+(.venv) thede@MAINPC:~/NeMo-Speech$ cat ~/transgo-parakeet-benchmark/parakeet-streaming-560ms.json
+{"audio_filepath": "/home/thede/transgo-parakeet-benchmark/streaming-input/difficult-test.wav", "pred_text": "And I was like, just relax, bro. I'll be back. There's a fucking Dodge Durango in the parking lot. I didn't know who it was. Yeah, that's how it was. You could have got him killed, dude. Nah, dude, it wasn't like that. But then some guy, his could have been a no-knock warrant. Dude across the street, true, storing drugs at a guy's house would get him killed. True. It was for like four hours. He'd be like, yo, what are you doing here? Jimmy. Oh, no. It's just pot. Go learn. Yeah, he'd be in the meal of cheering for the Eagles. Oh, yeah, the birds are all"}
+(.venv) thede@MAINPC:~/NeMo-Speech$ cd ~/transgo-parakeet-benchmark

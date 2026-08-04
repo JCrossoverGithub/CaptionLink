@@ -62,14 +62,25 @@
                                Foreground="White"/>
 
                     <ComboBox x:Name="TranscriptionProviderComboBox"
-                              Height="38"
-                              Padding="8,4"
-                              Margin="0,0,0,22"
-                              SelectedIndex="0">
+                      Height="38"
+                      Padding="8,4"
+                      Margin="0,0,0,22"
+                      SelectedIndex="0">
 
-                        <ComboBoxItem Content="Local — Sherpa-ONNX"/>
+                        <ComboBoxItem Content="Local — Parakeet Transport Test"
+              Tag="parakeet"/>
+                        
+                        <ComboBoxItem Content="Local — Sherpa Streaming"
+                  Tag="sherpa-streaming"/>
 
-                        <ComboBoxItem Content="Google Cloud"/>
+                        <ComboBoxItem Content="Local — Hybrid"
+                  Tag="hybrid"/>
+
+                        <ComboBoxItem Content="Local — Whisper Turbo (Delayed)"
+                  Tag="whisper-turbo"/>
+
+                        <ComboBoxItem Content="Google Cloud"
+                  Tag="google"/>
                     </ComboBox>
 
                     <TextBlock x:Name="StatusText"
