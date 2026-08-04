@@ -20,7 +20,7 @@ from parakeet_audio import ModelAudioFrame
 
 MODEL_NAME = "nvidia/parakeet-unified-en-0.6b"
 MODEL_SAMPLE_RATE = 16_000
-MODEL_FRAME_DURATION_SECONDS = 0.16
+MODEL_FRAME_DURATION_SECONDS = 0.56
 MODEL_FRAME_SAMPLE_COUNT = int(
     MODEL_SAMPLE_RATE * MODEL_FRAME_DURATION_SECONDS
 )
@@ -70,7 +70,7 @@ def build_parakeet_pipeline(
         cfg.streaming.batch_size = 1
         cfg.streaming.left_padding_size = 5.60
         cfg.streaming.chunk_size = MODEL_FRAME_DURATION_SECONDS
-        cfg.streaming.right_padding_size = 0.40
+        cfg.streaming.right_padding_size = 0.56
         cfg.streaming.request_type = "frame"
         cfg.streaming.stateful = True
         cfg.streaming.padding_mode = "right"

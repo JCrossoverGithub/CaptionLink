@@ -12,16 +12,14 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 from parakeet_audio import StreamingAudioPreprocessor
 from parakeet_streaming import (
+    MODEL_FRAME_DURATION_SECONDS,
+    MODEL_FRAME_SAMPLE_COUNT,
     MODEL_NAME,
+    MODEL_SAMPLE_RATE,
     ParakeetPipelineResult,
     ParakeetStreamingSession,
     build_parakeet_pipeline,
 )
-
-
-MODEL_SAMPLE_RATE = 16_000
-MODEL_FRAME_DURATION_SECONDS = 0.16
-MODEL_SAMPLES_PER_FRAME = 2_560
 
 
 @asynccontextmanager
@@ -93,8 +91,29 @@ async def health() -> dict[str, object]:
         "model_frame_duration_seconds": (
             MODEL_FRAME_DURATION_SECONDS
         ),
+        "model_samples_per_frame": (
+            MODEL_FRAME_SAMPLE_COUNT
+        ),
     }
 
+def normalize_transcript_text(
+    text: str | None,
+) -> str:
+    if not text:
+        return ""
+
+    return " ".join(
+        text.split()
+    )
+
+
+def contains_spoken_content(
+    text: str,
+) -> bool:
+    return any(
+        character.isalnum()
+        for character in text
+    )
 
 @app.websocket("/stream")
 async def stream_audio(websocket: WebSocket) -> None:
@@ -174,27 +193,19 @@ async def stream_audio(websocket: WebSocket) -> None:
         nonlocal segment_number
         nonlocal last_partial_text
 
-        if result.final_text:
-            result_sequence += 1
+        final_text = normalize_transcript_text(
+            result.final_text
+        )
 
-            await websocket.send_json(
-                {
-                    "type": "transcript",
-                    "segment_id": (
-                        f"parakeet-{segment_number:06d}"
-                    ),
-                    "sequence": result_sequence,
-                    "text": result.final_text,
-                    "is_final": True,
-                }
-            )
-
-            segment_number += 1
-            last_partial_text = ""
+        partial_text = normalize_transcript_text(
+            result.partial_text
+        )
 
         if (
-            result.partial_text
-            and result.partial_text != last_partial_text
+            final_text
+            and contains_spoken_content(
+                final_text
+            )
         ):
             result_sequence += 1
 
@@ -205,12 +216,39 @@ async def stream_audio(websocket: WebSocket) -> None:
                         f"parakeet-{segment_number:06d}"
                     ),
                     "sequence": result_sequence,
-                    "text": result.partial_text,
+                    "text": final_text,
+                    "is_final": True,
+                }
+            )
+
+            segment_number += 1
+            last_partial_text = ""
+
+        if (
+            partial_text
+            and contains_spoken_content(
+                partial_text
+            )
+            and partial_text
+            != last_partial_text
+        ):
+            result_sequence += 1
+
+            await websocket.send_json(
+                {
+                    "type": "transcript",
+                    "segment_id": (
+                        f"parakeet-{segment_number:06d}"
+                    ),
+                    "sequence": result_sequence,
+                    "text": partial_text,
                     "is_final": False,
                 }
             )
 
-            last_partial_text = result.partial_text
+            last_partial_text = (
+                partial_text
+            )
 
     async def transcribe_model_frame(
         frame,
@@ -335,7 +373,7 @@ async def stream_audio(websocket: WebSocket) -> None:
                                 MODEL_FRAME_DURATION_SECONDS
                             ),
                             "model_samples_per_frame": (
-                                MODEL_SAMPLES_PER_FRAME
+                                MODEL_FRAME_SAMPLE_COUNT
                             ),
                         }
                     )
