@@ -13,12 +13,13 @@ public sealed class ParakeetServiceLauncher
         "Ubuntu-24.04";
 
     private const string LinuxServiceCommand =
-        "cd \"$HOME/transgo-parakeet-benchmark\" " +
-        "&& exec " +
-        "\"$HOME/transgo-parakeet-benchmark/.venv/bin/python\" " +
-        "-m uvicorn parakeet_service:app " +
-        "--host 127.0.0.1 " +
-        "--port 8765";
+    "cd \"/mnt/c/Users/thede/Documents/Projects/" +
+    "TransGo.Desktop/TransGo.LocalAsr.Parakeet\" " +
+    "&& exec " +
+    "\"$HOME/transgo-parakeet-benchmark/.venv/bin/python\" " +
+    "-m uvicorn parakeet_service:app " +
+    "--host 127.0.0.1 " +
+    "--port 8765";
 
     private static readonly TimeSpan StartupTimeout =
         TimeSpan.FromSeconds(45);
