@@ -71,14 +71,9 @@ internal static class SherpaRecognizerFactory
          */
         config.EnableEndpoint = 1;
 
-        config.Rule1MinTrailingSilence =
-            2.4F;
-
-        config.Rule2MinTrailingSilence =
-            0.8F;
-
-        config.Rule3MinUtteranceLength =
-            20.0F;
+        config.Rule1MinTrailingSilence = 1.2F;
+        config.Rule2MinTrailingSilence = 0.55F;
+        config.Rule3MinUtteranceLength = 8.0F;
 
         return new OnlineRecognizer(
             config);
