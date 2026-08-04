@@ -14,6 +14,9 @@ public sealed class ParakeetStreamingTranscriptionEngine
 {
     private readonly object _gate = new();
 
+    private readonly ParakeetServiceLauncher
+    _serviceLauncher = new();
+
     private ParakeetServiceClient? _client;
     private int? _configuredSampleRate;
 
@@ -64,6 +67,14 @@ public sealed class ParakeetStreamingTranscriptionEngine
 
         try
         {
+            ParakeetServiceHealth health =
+                await _serviceLauncher.EnsureReadyAsync(
+                    cancellationToken);
+
+            Debug.WriteLine(
+                "Local Parakeet service ready. " +
+                $"GPU: {health.Gpu}");
+
             await client.ConnectAsync(
                 configuration.SampleRate,
                 cancellationToken);
@@ -410,6 +421,8 @@ public sealed class ParakeetStreamingTranscriptionEngine
         }
         finally
         {
+            await _serviceLauncher.DisposeAsync();
+
             lock (_gate)
             {
                 _disposed = true;
