@@ -3,6 +3,7 @@ using System.Runtime.ExceptionServices;
 using System.Threading.Channels;
 using TransGo.Core.Audio;
 using TransGo.Core.Transcription;
+using System.Collections.Generic;
 
 using GoogleByteString =
     global::Google.Protobuf.ByteString;
@@ -367,6 +368,24 @@ public sealed class GoogleStreamingTranscriptionEngine
                 .GetResponseStream()
                 .WithCancellation(cancellationToken))
         {
+            /*
+             * One Google response can contain:
+             *
+             * - a newly finalized portion;
+             * - one or more consecutive interim portions.
+             *
+             * The interim portions must be combined into one
+             * hypothesis before publishing them to the UI.
+             */
+            var interimParts =
+                new List<string>();
+
+            double? combinedStability =
+                null;
+
+            TimeSpan? interimEndTime =
+                null;
+
             foreach (
                 global::Google.Cloud.Speech.V1
                     .StreamingRecognitionResult result
@@ -387,56 +406,99 @@ public sealed class GoogleStreamingTranscriptionEngine
                     continue;
                 }
 
-                long sequence =
-                    Interlocked.Increment(
-                        ref _resultSequence);
-
-                long segmentNumber =
-                    Interlocked.Read(
-                        ref _segmentSequence);
-
-                double? stability =
-                    !result.IsFinal &&
-                    result.Stability > 0
-                        ? result.Stability
-                        : null;
-
-                TimeSpan? resultEndTime =
-                    ConvertResultEndTime(result);
-
-                var transcriptResult =
-                    new TranscriptResult(
-                        SegmentId:
-                            $"segment-{segmentNumber:D6}",
-
-                        Sequence:
-                            sequence,
-
-                        Text:
-                            text,
-
-                        IsFinal:
-                            result.IsFinal,
-
-                        Stability:
-                            stability,
-
-                        ResultEndTime:
-                            resultEndTime);
-
-                PublishResult(transcriptResult);
-
-                /*
-                 * Interim updates reuse the current segment ID.
-                 * A finalized result advances to the next segment.
-                 */
                 if (result.IsFinal)
                 {
+                    PublishGoogleResult(
+                        text: text,
+                        isFinal: true,
+                        stability: null,
+                        resultEndTime:
+                            ConvertResultEndTime(result));
+
+                    /*
+                     * Any interim portions later in this response
+                     * belong to the next unsettled segment.
+                     */
                     Interlocked.Increment(
                         ref _segmentSequence);
+
+                    continue;
                 }
+
+                interimParts.Add(text);
+
+                if (result.Stability > 0)
+                {
+                    double stability =
+                        result.Stability;
+
+                    combinedStability =
+                        combinedStability is null
+                            ? stability
+                            : Math.Min(
+                                combinedStability.Value,
+                                stability);
+                }
+
+                interimEndTime =
+                    ConvertResultEndTime(result);
             }
+
+            if (interimParts.Count == 0)
+            {
+                continue;
+            }
+
+            string combinedInterimText =
+                string.Join(
+                    " ",
+                    interimParts)
+                .Trim();
+
+            PublishGoogleResult(
+                text: combinedInterimText,
+                isFinal: false,
+                stability: combinedStability,
+                resultEndTime: interimEndTime);
         }
+    }
+
+    private void PublishGoogleResult(
+    string text,
+    bool isFinal,
+    double? stability,
+    TimeSpan? resultEndTime)
+    {
+        long sequence =
+            Interlocked.Increment(
+                ref _resultSequence);
+
+        long segmentNumber =
+            Interlocked.Read(
+                ref _segmentSequence);
+
+        var transcriptResult =
+            new TranscriptResult(
+                SegmentId:
+                    $"segment-{segmentNumber:D6}",
+
+                Sequence:
+                    sequence,
+
+                Text:
+                    text,
+
+                IsFinal:
+                    isFinal,
+
+                Stability:
+                    stability,
+
+                ResultEndTime:
+                    resultEndTime);
+
+        PublishResult(
+            transcriptResult);
     }
 
     private void PublishResult(
