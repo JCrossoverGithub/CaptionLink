@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="TransGo"
-        Height="700"
+        Height="760"
         Width="620"
         MinHeight="650"
         MinWidth="560"
@@ -54,6 +54,23 @@
                                 Margin="10,0,0,0"
                                 Click="RefreshDevicesButton_Click"/>
                     </Grid>
+
+                    <TextBlock Text="Transcription provider"
+                               Margin="0,0,0,8"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="White"/>
+
+                    <ComboBox x:Name="TranscriptionProviderComboBox"
+                              Height="38"
+                              Padding="8,4"
+                              Margin="0,0,0,22"
+                              SelectedIndex="0">
+
+                        <ComboBoxItem Content="Local — Sherpa-ONNX"/>
+
+                        <ComboBoxItem Content="Google Cloud"/>
+                    </ComboBox>
 
                     <TextBlock x:Name="StatusText"
                                Text="Not listening"

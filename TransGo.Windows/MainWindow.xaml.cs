@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using TransGo.Audio.Processing;
 using TransGo.Audio.Windows;
 using TransGo.Core.Audio;
 using TransGo.Core.Transcription;
 using TransGo.Speech.Google;
+using TransGo.Speech.Sherpa;
 
 namespace TransGo.Windows;
 
@@ -17,11 +20,11 @@ public partial class MainWindow : Window
 
     private readonly IAudioCaptureEngine _captureEngine;
     private readonly IAudioFrameNormalizer _audioNormalizer;
-    private readonly ITranscriptionEngine _transcriptionEngine;
     private readonly CaptionOverlayWindow _captionOverlay;
 
     private readonly List<AudioOutputDevice> _audioDevices = new();
 
+    private ITranscriptionEngine? _transcriptionEngine;
     private string _finalTranscript = string.Empty;
 
     public MainWindow()
@@ -29,16 +32,13 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         _captionOverlay =
-        new CaptionOverlayWindow();
+            new CaptionOverlayWindow();
 
         _captureEngine =
             new WasapiLoopbackCaptureEngine();
 
         _audioNormalizer =
             new Pcm16MonoFrameNormalizer();
-
-        _transcriptionEngine =
-            new GoogleStreamingTranscriptionEngine();
 
         _captureEngine.AudioFrameAvailable +=
             CaptureEngine_AudioFrameAvailable;
@@ -52,10 +52,34 @@ public partial class MainWindow : Window
         _audioNormalizer.ChunkAvailable +=
             AudioNormalizer_ChunkAvailable;
 
-        _transcriptionEngine.ResultReceived +=
-            TranscriptionEngine_ResultReceived;
-
         LoadOutputDevices();
+    }
+
+    private string GetSelectedProviderName()
+    {
+        if (TranscriptionProviderComboBox.SelectedItem
+            is not ComboBoxItem selectedItem)
+        {
+            throw new InvalidOperationException(
+                "Select a transcription provider.");
+        }
+
+        return selectedItem.Content?.ToString()
+            ?? throw new InvalidOperationException(
+                "The selected provider has no name.");
+    }
+
+    private ITranscriptionEngine
+        CreateSelectedTranscriptionEngine()
+    {
+        string providerName =
+            GetSelectedProviderName();
+
+        return providerName.StartsWith(
+            "Local",
+            StringComparison.OrdinalIgnoreCase)
+                ? new SherpaStreamingTranscriptionEngine()
+                : new GoogleStreamingTranscriptionEngine();
     }
 
     private void LoadOutputDevices()
@@ -131,7 +155,7 @@ public partial class MainWindow : Window
         RoutedEventArgs e)
     {
         if (_captureEngine.IsCapturing ||
-            _transcriptionEngine.IsRunning)
+            _transcriptionEngine?.IsRunning == true)
         {
             return;
         }
@@ -148,20 +172,46 @@ public partial class MainWindow : Window
             return;
         }
 
+        /*
+         * Clean up an engine left behind by an earlier failed
+         * startup before creating a new provider instance.
+         */
+        if (_transcriptionEngine is not null)
+        {
+            await DisposeTranscriptionEngineAsync();
+        }
+
         StartButton.IsEnabled = false;
         StopButton.IsEnabled = false;
 
         OutputDeviceComboBox.IsEnabled = false;
         RefreshDevicesButton.IsEnabled = false;
+        TranscriptionProviderComboBox.IsEnabled = false;
+
+        string providerName =
+            GetSelectedProviderName();
 
         StatusText.Text =
-            "Connecting to Google Speech-to-Text…";
+            providerName.StartsWith(
+                "Local",
+                StringComparison.OrdinalIgnoreCase)
+                    ? "Loading local Sherpa model…"
+                    : "Connecting to Google Speech-to-Text…";
+
+        ITranscriptionEngine engine =
+            CreateSelectedTranscriptionEngine();
+
+        _transcriptionEngine = engine;
+
+        engine.ResultReceived +=
+            TranscriptionEngine_ResultReceived;
 
         try
         {
             _audioNormalizer.Reset();
 
-            _finalTranscript = string.Empty;
+            _finalTranscript =
+                string.Empty;
 
             TranscriptText.Text =
                 "Listening for speech…";
@@ -191,17 +241,18 @@ public partial class MainWindow : Window
                     EnableInterimResults: true);
 
             /*
-             * Start Google first so no captured audio is lost
-             * while the streaming connection is being created.
+             * Start the selected provider before capture so
+             * the first captured audio is not discarded.
              */
-            await _transcriptionEngine.StartAsync(
+            await engine.StartAsync(
                 configuration);
 
             _captureEngine.Start(
                 selectedDevice.Id);
 
             StatusText.Text =
-                $"Listening to: {selectedDevice.Name}";
+                $"Listening with {providerName}: " +
+                selectedDevice.Name;
 
             StopButton.IsEnabled = true;
         }
@@ -214,15 +265,13 @@ public partial class MainWindow : Window
                     _captureEngine.Stop();
                 }
 
-                if (_transcriptionEngine.IsRunning)
-                {
-                    await _transcriptionEngine.StopAsync();
-                }
+                await DisposeTranscriptionEngineAsync();
             }
             catch (Exception cleanupException)
             {
                 Debug.WriteLine(
-                    $"Startup cleanup failed: {cleanupException}");
+                    $"Startup cleanup failed: " +
+                    cleanupException);
             }
 
             RestoreStoppedControls();
@@ -252,8 +301,8 @@ public partial class MainWindow : Window
         StatusText.Text = "Stopping…";
 
         /*
-         * CaptureStopped will stop the Google stream after
-         * no more normalized audio can be produced.
+         * CaptureStopped will shut down the selected
+         * transcription provider after audio production ends.
          */
         _captureEngine.Stop();
     }
@@ -270,8 +319,8 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             /*
-             * Never allow a normalization failure to escape
-             * into NAudio's real-time callback.
+             * Never allow normalization failures to escape
+             * into the real-time NAudio callback.
              */
             Debug.WriteLine(
                 $"Audio normalization failed: {exception}");
@@ -285,7 +334,7 @@ public partial class MainWindow : Window
         TranscriptionAudioChunk chunk =
             e.Chunk;
 
-        Dispatcher.BeginInvoke(new Action(() =>
+        _ = Dispatcher.BeginInvoke(new Action(() =>
         {
             NormalizationText.Text =
                 $"Normalized chunks: {chunk.Sequence:N0} · " +
@@ -293,21 +342,95 @@ public partial class MainWindow : Window
                 $"{chunk.Duration.TotalMilliseconds:0} ms";
         }));
 
-        if (!_transcriptionEngine.IsRunning)
+        ITranscriptionEngine? engine =
+            _transcriptionEngine;
+
+        if (engine is null ||
+            !engine.IsRunning)
         {
             return;
         }
 
         try
         {
-            await _transcriptionEngine.SendAsync(
+            await engine.SendAsync(
                 chunk);
         }
         catch (Exception exception)
         {
             Debug.WriteLine(
-                $"Sending transcription audio failed: {exception}");
+                $"Sending transcription audio failed: " +
+                exception);
         }
+    }
+
+    private static string GetOverlayCaption(
+        string text,
+        int maximumWords = 18)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        string trimmedText =
+            text.Trim();
+
+        /*
+         * Prefer the newest sentence or unfinished sentence.
+         * This prevents earlier completed sentences from
+         * remaining in the floating caption.
+         */
+        int searchIndex =
+            trimmedText.Length - 1;
+
+        while (
+            searchIndex >= 0 &&
+            (char.IsWhiteSpace(
+                 trimmedText[searchIndex]) ||
+             trimmedText[searchIndex] is
+                 '.' or '!' or '?'))
+        {
+            searchIndex--;
+        }
+
+        int previousSentenceBoundary = -1;
+
+        for (
+            int index = searchIndex;
+            index >= 0;
+            index--)
+        {
+            if (trimmedText[index] is
+                '.' or '!' or '?')
+            {
+                previousSentenceBoundary =
+                    index;
+
+                break;
+            }
+        }
+
+        string currentSentence =
+            previousSentenceBoundary >= 0
+                ? trimmedText[
+                    (previousSentenceBoundary + 1)..]
+                    .Trim()
+                : trimmedText;
+
+        string[] words =
+            currentSentence.Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries);
+
+        if (words.Length <= maximumWords)
+        {
+            return currentSentence;
+        }
+
+        return string.Join(
+            ' ',
+            words[^maximumWords..]);
     }
 
     private void TranscriptionEngine_ResultReceived(
@@ -317,10 +440,8 @@ public partial class MainWindow : Window
         TranscriptResult result =
             e.Result;
 
-        Dispatcher.BeginInvoke(new Action(() =>
+        _ = Dispatcher.BeginInvoke(new Action(() =>
         {
-            string displayText;
-
             if (result.IsFinal)
             {
                 if (!string.IsNullOrWhiteSpace(
@@ -332,23 +453,32 @@ public partial class MainWindow : Window
                 _finalTranscript +=
                     result.Text;
 
-                displayText =
+                /*
+                 * The main window keeps complete finalized
+                 * transcript history.
+                 */
+                TranscriptText.Text =
                     _finalTranscript;
             }
             else
             {
-                displayText =
+                /*
+                 * Interim text is temporary and may be replaced
+                 * by the recognition engine.
+                 */
+                TranscriptText.Text =
                     string.IsNullOrWhiteSpace(
                         _finalTranscript)
                         ? result.Text
                         : $"{_finalTranscript} {result.Text}";
             }
 
-            TranscriptText.Text =
-                displayText;
-
+            /*
+             * The overlay receives only the newest caption,
+             * never the entire accumulated transcript.
+             */
             _captionOverlay.SetCaption(
-                displayText,
+                GetOverlayCaption(result.Text),
                 result.IsFinal);
         }));
     }
@@ -357,7 +487,7 @@ public partial class MainWindow : Window
         object? sender,
         AudioCaptureMetricsEventArgs e)
     {
-        Dispatcher.BeginInvoke(new Action(() =>
+        _ = Dispatcher.BeginInvoke(new Action(() =>
         {
             AudioLevelMeter.Value =
                 e.LevelPercent;
@@ -378,20 +508,19 @@ public partial class MainWindow : Window
 
         try
         {
-            if (_transcriptionEngine.IsRunning)
-            {
-                await _transcriptionEngine.StopAsync();
-            }
+            await DisposeTranscriptionEngineAsync();
         }
         catch (Exception exception)
         {
-            transcriptionError = exception;
+            transcriptionError =
+                exception;
 
             Debug.WriteLine(
-                $"Stopping transcription failed: {exception}");
+                $"Stopping transcription failed: " +
+                exception);
         }
 
-        Dispatcher.BeginInvoke(new Action(() =>
+        _ = Dispatcher.BeginInvoke(new Action(() =>
         {
             RestoreStoppedControls();
 
@@ -427,6 +556,44 @@ public partial class MainWindow : Window
         }));
     }
 
+    private async Task
+        DisposeTranscriptionEngineAsync()
+    {
+        ITranscriptionEngine? engine =
+            _transcriptionEngine;
+
+        if (engine is null)
+        {
+            return;
+        }
+
+        /*
+         * Remove the shared reference immediately so new
+         * audio chunks cannot be queued during shutdown.
+         */
+        _transcriptionEngine = null;
+
+        try
+        {
+            if (engine.IsRunning)
+            {
+                /*
+                 * Keep the result event subscribed during
+                 * StopAsync so the engine can publish its
+                 * final buffered transcript.
+                 */
+                await engine.StopAsync();
+            }
+        }
+        finally
+        {
+            engine.ResultReceived -=
+                TranscriptionEngine_ResultReceived;
+
+            await engine.DisposeAsync();
+        }
+    }
+
     private void RestoreStoppedControls()
     {
         AudioLevelMeter.Value = 0;
@@ -438,8 +605,10 @@ public partial class MainWindow : Window
             _audioDevices.Count > 0;
 
         StopButton.IsEnabled = false;
+
         OutputDeviceComboBox.IsEnabled = true;
         RefreshDevicesButton.IsEnabled = true;
+        TranscriptionProviderComboBox.IsEnabled = true;
     }
 
     protected override async void OnClosed(
@@ -457,9 +626,6 @@ public partial class MainWindow : Window
         _audioNormalizer.ChunkAvailable -=
             AudioNormalizer_ChunkAvailable;
 
-        _transcriptionEngine.ResultReceived -=
-            TranscriptionEngine_ResultReceived;
-
         try
         {
             if (_captureEngine.IsCapturing)
@@ -470,7 +636,8 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             Debug.WriteLine(
-                $"Audio capture cleanup failed: {exception}");
+                $"Audio capture cleanup failed: " +
+                exception);
         }
 
         _audioNormalizer.Dispose();
@@ -481,12 +648,13 @@ public partial class MainWindow : Window
 
         try
         {
-            await _transcriptionEngine.DisposeAsync();
+            await DisposeTranscriptionEngineAsync();
         }
         catch (Exception exception)
         {
             Debug.WriteLine(
-                $"Transcription cleanup failed: {exception}");
+                $"Transcription cleanup failed: " +
+                exception);
         }
     }
 }
