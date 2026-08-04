@@ -26,7 +26,7 @@ public sealed class ParakeetServiceLauncher
     private static readonly TimeSpan HealthPollInterval =
         TimeSpan.FromMilliseconds(500);
 
-    private readonly SemaphoreSlim _startupGate =
+    private static readonly SemaphoreSlim StartupGate =
         new(1, 1);
 
     private readonly ParakeetServiceHealthClient
@@ -54,7 +54,7 @@ public sealed class ParakeetServiceLauncher
          * Prevent two simultaneous Start Listening requests
          * from launching two WSL service processes.
          */
-        await _startupGate.WaitAsync(
+        await StartupGate.WaitAsync(
             cancellationToken);
 
         try
@@ -88,7 +88,7 @@ public sealed class ParakeetServiceLauncher
         }
         finally
         {
-            _startupGate.Release();
+            StartupGate.Release();
         }
     }
 
@@ -281,7 +281,6 @@ public sealed class ParakeetServiceLauncher
         DisposeServiceProcess();
 
         _healthClient.Dispose();
-        _startupGate.Dispose();
 
         GC.SuppressFinalize(this);
 

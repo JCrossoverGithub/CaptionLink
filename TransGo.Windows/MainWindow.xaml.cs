@@ -28,9 +28,18 @@ public partial class MainWindow : Window
     private ITranscriptionEngine? _transcriptionEngine;
     private string _finalTranscript = string.Empty;
 
+    private readonly ParakeetServiceLauncher
+    _parakeetPreloader = new();
+
+    private readonly CancellationTokenSource
+        _windowCancellation = new();
+
     public MainWindow()
     {
         InitializeComponent();
+
+        Loaded += MainWindow_Loaded;
+        Closed += MainWindow_Closed;
 
         _captionOverlay =
             new CaptionOverlayWindow();
@@ -56,6 +65,82 @@ public partial class MainWindow : Window
         LoadOutputDevices();
     }
 
+    private async void MainWindow_Loaded(
+    object sender,
+    RoutedEventArgs eventArgs)
+    {
+        await PrepareParakeetAsync(
+            _windowCancellation.Token);
+    }
+
+    private async Task PrepareParakeetAsync(
+        CancellationToken cancellationToken)
+    {
+        const string preparingMessage =
+            "Preparing local captions...";
+
+        StatusText.Text =
+            preparingMessage;
+
+        try
+        {
+            ParakeetServiceHealth health =
+                await _parakeetPreloader
+                    .EnsureReadyAsync(
+                        cancellationToken);
+
+            /*
+             * Do not overwrite a newer status message if the user
+             * already clicked Start Listening during warm-up.
+             */
+            if (StatusText.Text ==
+                preparingMessage)
+            {
+                StatusText.Text =
+                    "Local captions ready";
+
+                if (!string.IsNullOrWhiteSpace(
+                        health.Gpu))
+                {
+                    StatusText.Text +=
+                        $" — {health.Gpu}";
+                }
+            }
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            // The window closed while Parakeet was loading.
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(
+                "Parakeet background preparation failed: " +
+                exception);
+
+            /*
+             * Starting transcription will retry automatically,
+             * so a preload failure does not disable the provider.
+             */
+            if (StatusText.Text ==
+                preparingMessage)
+            {
+                StatusText.Text =
+                    "Local captions will start when needed";
+            }
+        }
+    }
+
+    private async void MainWindow_Closed(
+        object? sender,
+        EventArgs eventArgs)
+    {
+        _windowCancellation.Cancel();
+
+        await _parakeetPreloader.DisposeAsync();
+
+        _windowCancellation.Dispose();
+    }
     private string GetSelectedProviderName()
     {
         if (TranscriptionProviderComboBox.SelectedItem
