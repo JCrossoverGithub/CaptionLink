@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from functools import partial
@@ -115,6 +116,16 @@ def contains_spoken_content(
     return any(
         character.isalnum()
         for character in text
+    )
+
+def is_fatal_cuda_error(
+    exception: Exception,
+) -> bool:
+    message = str(exception).casefold()
+
+    return (
+        "device-side assert" in message
+        or "cudaerrorassert" in message
     )
 
 @app.websocket("/stream")
@@ -264,6 +275,8 @@ async def stream_audio(websocket: WebSocket) -> None:
         )
 
         await publish_pipeline_result(result)
+
+    fatal_cuda_error = False
 
     try:
         while True:
@@ -567,7 +580,14 @@ async def stream_audio(websocket: WebSocket) -> None:
         print("TransGo WebSocket client disconnected.")
 
     except Exception as exception:
-        print(f"WebSocket session failed: {exception}")
+        fatal_cuda_error = is_fatal_cuda_error(
+            exception
+        )
+
+        print(
+            f"WebSocket session failed: {exception}",
+            flush=True,
+        )
 
         try:
             await websocket.send_json(
@@ -580,7 +600,14 @@ async def stream_audio(websocket: WebSocket) -> None:
             pass
 
     finally:
-        if session_started and not session_closed:
+        # Do not call back into the NeMo/CUDA pipeline after a
+        # device-side assertion. The CUDA context is already
+        # unusable, and the process is about to terminate.
+        if (
+            session_started
+            and not session_closed
+            and not fatal_cuda_error
+        ):
             try:
                 await run_session_method(
                     streaming_session.close
@@ -588,11 +615,22 @@ async def stream_audio(websocket: WebSocket) -> None:
             except Exception as exception:
                 print(
                     "Failed to close the Parakeet session: "
-                    f"{exception}"
+                    f"{exception}",
+                    flush=True,
                 )
 
         if session_lock.locked():
             session_lock.release()
+
+        if fatal_cuda_error:
+            print(
+                "Fatal CUDA error detected. "
+                "Terminating the Parakeet service so "
+                "TransGo can launch a clean process.",
+                flush=True,
+            )
+
+            os._exit(70)
 
 
 def calculate_duration(
