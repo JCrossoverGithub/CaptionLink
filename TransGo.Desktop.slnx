@@ -3,6 +3,8 @@
   <Project Path="TransGo.Audio.Windows/TransGo.Audio.Windows.csproj" />
   <Project Path="TransGo.Core/TransGo.Core.csproj" />
   <Project Path="TransGo.Speech.Google/TransGo.Speech.Google.csproj" Id="d9371c1c-2916-4fff-b44b-d50d68c8252e" />
+  <Project Path="TransGo.Speech.Parakeet/TransGo.Speech.Parakeet.csproj" Id="3a20c9b6-a70f-426b-a2cb-a49e55a5a32e" />
   <Project Path="TransGo.Speech.Sherpa/TransGo.Speech.Sherpa.csproj" Id="9a4657ea-9b86-456e-bf04-ab5ae2511634" />
+  <Project Path="TransGo.Whisper.Probe/TransGo.Whisper.Probe.csproj" Id="d0a6abd9-8423-403d-9dcb-de0e6d392478" />
   <Project Path="TransGo.Windows/TransGo.Windows.csproj" />
 </Solution>
