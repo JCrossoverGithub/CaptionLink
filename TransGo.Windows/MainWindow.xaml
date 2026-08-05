@@ -67,9 +67,40 @@
                               Margin="0,0,0,22"
                               SelectedIndex="0">
 
-                        <ComboBoxItem Content="Local — Sherpa-ONNX"/>
+                        <ComboBoxItem Content="Local — Parakeet GPU"
+                                      Tag="parakeet"/>
 
-                        <ComboBoxItem Content="Google Cloud"/>
+                        <ComboBoxItem Content="Google Cloud"
+                                      Tag="google"/>
+
+                        <ComboBoxItem Content="Local — Sherpa Streaming"
+                                      Tag="sherpa-streaming"/>
+
+                        <ComboBoxItem Content="Local — Hybrid (Experimental)"
+                                      Tag="hybrid"/>
+
+                        <ComboBoxItem Content="Local — Whisper Turbo (Delayed)"
+                                      Tag="whisper-turbo"/>
+                    </ComboBox>
+
+                    <TextBlock Text="Local caption quality"
+                               Margin="0,0,0,8"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="White"/>
+
+                    <ComboBox x:Name="ParakeetProfileComboBox"
+                              Height="38"
+                              Padding="8,4"
+                              Margin="0,0,0,22"
+                              SelectedIndex="1"
+                              SelectionChanged="ParakeetProfileComboBox_SelectionChanged">
+
+                        <ComboBoxItem Content="Responsive — lower latency"
+                                      Tag="responsive"/>
+
+                        <ComboBoxItem Content="Accurate — better context"
+                                      Tag="accurate"/>
                     </ComboBox>
 
                     <TextBlock x:Name="StatusText"

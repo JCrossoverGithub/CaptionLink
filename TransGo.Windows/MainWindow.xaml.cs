@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using TransGo.Audio.Processing;
@@ -11,6 +11,7 @@ using TransGo.Core.Audio;
 using TransGo.Core.Transcription;
 using TransGo.Speech.Google;
 using TransGo.Speech.Sherpa;
+using TransGo.Speech.Parakeet;
 
 namespace TransGo.Windows;
 
@@ -27,9 +28,20 @@ public partial class MainWindow : Window
     private ITranscriptionEngine? _transcriptionEngine;
     private string _finalTranscript = string.Empty;
 
+    private readonly ParakeetServiceLauncher
+    _parakeetPreloader = new();
+
+    private readonly CancellationTokenSource
+        _windowCancellation = new();
+
+    private int _transcriptionDisconnectHandled;
+
     public MainWindow()
     {
         InitializeComponent();
+
+        Loaded += MainWindow_Loaded;
+        Closed += MainWindow_Closed;
 
         _captionOverlay =
             new CaptionOverlayWindow();
@@ -55,6 +67,166 @@ public partial class MainWindow : Window
         LoadOutputDevices();
     }
 
+    private ParakeetStreamingProfile
+        GetSelectedParakeetProfile()
+    {
+        if (
+            ParakeetProfileComboBox.SelectedItem
+            is ComboBoxItem selectedItem
+            &&
+            string.Equals(
+                selectedItem.Tag?.ToString(),
+                "responsive",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return ParakeetStreamingProfile.Responsive;
+        }
+
+        return ParakeetStreamingProfile.Accurate;
+    }
+
+    private async void
+        ParakeetProfileComboBox_SelectionChanged(
+            object sender,
+            SelectionChangedEventArgs eventArgs)
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        ParakeetStreamingProfile profile =
+            GetSelectedParakeetProfile();
+
+        StatusText.Text =
+            $"Preparing {profile.ToDisplayName()}...";
+
+        ParakeetProfileComboBox.IsEnabled = false;
+
+        StartButton.IsEnabled = false;
+
+        try
+        {
+            ParakeetServiceHealth health =
+                await _parakeetPreloader.EnsureReadyAsync(
+                    profile,
+                    _windowCancellation.Token);
+
+            StatusText.Text =
+                "Local captions ready — " +
+                profile.ToDisplayName();
+
+            Debug.WriteLine(
+                "Parakeet profile loaded. " +
+                $"Profile: {health.Profile}. " +
+                $"GPU: {health.Gpu}");
+        }
+        catch (OperationCanceledException)
+            when (_windowCancellation
+                .IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(
+                "Failed to change Parakeet profile: " +
+                exception);
+
+            StatusText.Text =
+                "Could not change local caption quality";
+        }
+        finally
+        {
+            if (
+                IsLoaded &&
+                !_captureEngine.IsCapturing)
+            {
+                ParakeetProfileComboBox.IsEnabled =
+                    true;
+
+                StartButton.IsEnabled =
+                    _audioDevices.Count > 0;
+            }
+        }
+    }
+
+    private async void MainWindow_Loaded(
+    object sender,
+    RoutedEventArgs eventArgs)
+    {
+        await PrepareParakeetAsync(
+            _windowCancellation.Token);
+    }
+
+    private async Task PrepareParakeetAsync(
+        CancellationToken cancellationToken)
+    {
+        const string preparingMessage =
+            "Preparing local captions...";
+
+        StatusText.Text =
+            preparingMessage;
+
+        try
+        {
+            ParakeetServiceHealth health =
+                await _parakeetPreloader
+                    .EnsureReadyAsync(
+                        GetSelectedParakeetProfile(),
+                        cancellationToken);
+
+            /*
+             * Do not overwrite a newer status message if the user
+             * already clicked Start Listening during warm-up.
+             */
+            if (StatusText.Text ==
+                preparingMessage)
+            {
+                StatusText.Text =
+                    "Local captions ready";
+
+                if (!string.IsNullOrWhiteSpace(
+                        health.Gpu))
+                {
+                    StatusText.Text +=
+                        $" — {health.Gpu}";
+                }
+            }
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            // The window closed while Parakeet was loading.
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(
+                "Parakeet background preparation failed: " +
+                exception);
+
+            /*
+             * Starting transcription will retry automatically,
+             * so a preload failure does not disable the provider.
+             */
+            if (StatusText.Text ==
+                preparingMessage)
+            {
+                StatusText.Text =
+                    "Local captions will start when needed";
+            }
+        }
+    }
+
+    private async void MainWindow_Closed(
+        object? sender,
+        EventArgs eventArgs)
+    {
+        _windowCancellation.Cancel();
+
+        await _parakeetPreloader.DisposeAsync();
+
+        _windowCancellation.Dispose();
+    }
     private string GetSelectedProviderName()
     {
         if (TranscriptionProviderComboBox.SelectedItem
@@ -69,17 +241,42 @@ public partial class MainWindow : Window
                 "The selected provider has no name.");
     }
 
-    private ITranscriptionEngine
-        CreateSelectedTranscriptionEngine()
+    private ITranscriptionEngine CreateSelectedTranscriptionEngine()
     {
-        string providerName =
-            GetSelectedProviderName();
+        if (
+            TranscriptionProviderComboBox.SelectedItem
+            is not ComboBoxItem selectedItem)
+        {
+            throw new InvalidOperationException(
+                "Select a transcription provider.");
+        }
 
-        return providerName.StartsWith(
-            "Local",
-            StringComparison.OrdinalIgnoreCase)
-                ? new SherpaStreamingTranscriptionEngine()
-                : new GoogleStreamingTranscriptionEngine();
+        string providerId =
+            selectedItem.Tag?.ToString() ??
+            string.Empty;
+
+        return providerId switch
+        {
+            "sherpa-streaming" =>
+                new SherpaStreamingTranscriptionEngine(),
+
+            "hybrid" =>
+                new HybridTranscriptionEngine(),
+
+            "whisper-turbo" =>
+                new WhisperTurboTranscriptionEngine(),
+
+            "parakeet" =>
+                new ParakeetStreamingTranscriptionEngine(
+                    GetSelectedParakeetProfile()),
+
+            "google" =>
+                new GoogleStreamingTranscriptionEngine(),
+
+            _ =>
+                throw new InvalidOperationException(
+                    $"Unknown transcription provider: {providerId}")
+        };
     }
 
     private void LoadOutputDevices()
@@ -187,16 +384,24 @@ public partial class MainWindow : Window
         OutputDeviceComboBox.IsEnabled = false;
         RefreshDevicesButton.IsEnabled = false;
         TranscriptionProviderComboBox.IsEnabled = false;
+        ParakeetProfileComboBox.IsEnabled = false;
 
         string providerName =
             GetSelectedProviderName();
 
         StatusText.Text =
-            providerName.StartsWith(
-                "Local",
-                StringComparison.OrdinalIgnoreCase)
-                    ? "Loading local Sherpa model…"
-                    : "Connecting to Google Speech-to-Text…";
+            providerName switch
+            {
+                "Local — Parakeet GPU" =>
+                    $"Preparing " +
+                    $"{GetSelectedParakeetProfile().ToDisplayName()}...",
+
+                "Google Cloud" =>
+                    "Connecting to Google Speech-to-Text…",
+
+                _ =>
+                    $"Loading {providerName}…"
+            };
 
         ITranscriptionEngine engine =
             CreateSelectedTranscriptionEngine();
@@ -239,6 +444,10 @@ public partial class MainWindow : Window
                     LanguageCode: "en-US",
                     SampleRate: TranscriptionSampleRate,
                     EnableInterimResults: true);
+
+            Interlocked.Exchange(
+                ref _transcriptionDisconnectHandled,
+                0);
 
             /*
              * Start the selected provider before capture so
@@ -356,10 +565,48 @@ public partial class MainWindow : Window
             await engine.SendAsync(
                 chunk);
         }
+
+        catch (InvalidOperationException exception)
+            when (
+                exception.Message.Contains(
+                    "not connected",
+                    StringComparison.OrdinalIgnoreCase))
+        {
+            /*
+             * Only handle the first disconnect. Otherwise every
+             * 100 ms audio chunk produces another exception.
+             */
+            if (
+                Interlocked.Exchange(
+                    ref _transcriptionDisconnectHandled,
+                    1)
+                != 0)
+            {
+                return;
+            }
+
+            Debug.WriteLine(
+                "The transcription service disconnected: " +
+                exception);
+
+            _ = Dispatcher.BeginInvoke(
+                new Action(() =>
+                {
+                    StatusText.Text =
+                        "Transcription service disconnected";
+
+                    StopButton.IsEnabled = false;
+
+                    if (_captureEngine.IsCapturing)
+                    {
+                        _captureEngine.Stop();
+                    }
+                }));
+        }
         catch (Exception exception)
         {
             Debug.WriteLine(
-                $"Sending transcription audio failed: " +
+                "Sending transcription audio failed: " +
                 exception);
         }
     }
@@ -609,6 +856,7 @@ public partial class MainWindow : Window
         OutputDeviceComboBox.IsEnabled = true;
         RefreshDevicesButton.IsEnabled = true;
         TranscriptionProviderComboBox.IsEnabled = true;
+        ParakeetProfileComboBox.IsEnabled = true;
     }
 
     protected override async void OnClosed(
