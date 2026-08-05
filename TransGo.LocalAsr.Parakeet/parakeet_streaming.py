@@ -99,6 +99,92 @@ class ParakeetPipelineResult:
     partial_text: str
     final_text: str
 
+def apply_nemo_decoder_length_guard(pipeline):
+    """
+    Prevent NeMo's stateful RNN-T decoder from receiving sequence
+    lengths larger than the encoder tensor's actual time dimension.
+
+    With the current Accurate profile, NeMo can report 16 decoder
+    steps while the sliced encoder tensor contains only 14. A final
+    streaming frame can expose this mismatch as an out-of-bounds
+    CUDA tensor access.
+    """
+    if getattr(
+        pipeline,
+        "_transgo_decoder_length_guard_installed",
+        False,
+    ):
+        return pipeline
+
+    original_stateful_transcribe_step = (
+        pipeline.stateful_transcribe_step
+    )
+
+    has_reported_clamp = False
+
+    def guarded_stateful_transcribe_step(
+        requests,
+        encs,
+        enc_lens_chunk,
+        enc_lens,
+        ready_state_ids,
+    ):
+        nonlocal has_reported_clamp
+
+        max_encoder_time = encs.shape[2]
+
+        safe_enc_lens = torch.clamp(
+            enc_lens,
+            min=0,
+            max=max_encoder_time,
+        )
+
+        safe_enc_lens_chunk = torch.clamp(
+            enc_lens_chunk,
+            min=0,
+            max=max_encoder_time,
+        )
+
+        safe_enc_lens_chunk = torch.minimum(
+            safe_enc_lens_chunk,
+            safe_enc_lens,
+        )
+
+    if not has_reported_clamp:
+        lengths_changed = (
+            torch.any(safe_enc_lens != enc_lens).item()
+            or torch.any(
+                safe_enc_lens_chunk != enc_lens_chunk
+            ).item()
+        )
+
+        if lengths_changed:
+            print(
+                "Applied TransGo NeMo decoder-length guard: "
+                f"encoder_time={max_encoder_time}, "
+                f"original_total={enc_lens.tolist()}, "
+                f"safe_total={safe_enc_lens.tolist()}, "
+                f"original_chunk={enc_lens_chunk.tolist()}, "
+                f"safe_chunk={safe_enc_lens_chunk.tolist()}",
+                flush=True,
+            )
+            has_reported_clamp = True
+
+        return original_stateful_transcribe_step(
+            requests,
+            encs,
+            safe_enc_lens_chunk,
+            safe_enc_lens,
+            ready_state_ids,
+        )
+
+    pipeline.stateful_transcribe_step = (
+        guarded_stateful_transcribe_step
+    )
+
+    pipeline._transgo_decoder_length_guard_installed = True
+
+    return pipeline
 
 def build_parakeet_pipeline(
     config_path: Path = DEFAULT_CONFIG_PATH,
@@ -158,7 +244,8 @@ def build_parakeet_pipeline(
         f"right={ACTIVE_PROFILE.right_padding_seconds:.2f}s"
     )
 
-    return PipelineBuilder.build_pipeline(cfg)
+    pipeline = PipelineBuilder.build_pipeline(cfg)
+    return apply_nemo_decoder_length_guard(pipeline)
 
 
 class ParakeetStreamingSession:
@@ -225,6 +312,7 @@ class ParakeetStreamingSession:
         )
 
         outputs = self._pipeline.transcribe_step([request])
+        self._is_first_frame = False
 
         if not outputs:
             return ParakeetPipelineResult(
@@ -233,7 +321,6 @@ class ParakeetStreamingSession:
             )
 
         output = outputs[0]
-        self._is_first_frame = False
 
         partial_text = (
             output.partial_transcript.strip()
