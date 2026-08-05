@@ -12,6 +12,8 @@ using TransGo.Core.Transcription;
 using TransGo.Speech.Google;
 using TransGo.Speech.Sherpa;
 using TransGo.Speech.Parakeet;
+using TransGo.Core.Diarization;
+using TransGo.Diarization.Simulated;
 
 namespace TransGo.Windows;
 
@@ -26,6 +28,8 @@ public partial class MainWindow : Window
     private readonly List<AudioOutputDevice> _audioDevices = new();
 
     private ITranscriptionEngine? _transcriptionEngine;
+    private IDiarizationEngine? _diarizationEngine;
+
     private string _finalTranscript = string.Empty;
 
     private readonly ParakeetServiceLauncher
@@ -65,6 +69,18 @@ public partial class MainWindow : Window
             AudioNormalizer_ChunkAvailable;
 
         LoadOutputDevices();
+    }
+
+    private bool IsSimulatedDiarizationSelected()
+    {
+        return
+            SpeakerAttributionComboBox.SelectedItem
+                is ComboBoxItem selectedItem
+            &&
+            string.Equals(
+                selectedItem.Tag?.ToString(),
+                "simulated",
+                StringComparison.OrdinalIgnoreCase);
     }
 
     private ParakeetStreamingProfile
@@ -385,6 +401,7 @@ public partial class MainWindow : Window
         RefreshDevicesButton.IsEnabled = false;
         TranscriptionProviderComboBox.IsEnabled = false;
         ParakeetProfileComboBox.IsEnabled = false;
+        SpeakerAttributionComboBox.IsEnabled = false;
 
         string providerName =
             GetSelectedProviderName();
@@ -857,6 +874,7 @@ public partial class MainWindow : Window
         RefreshDevicesButton.IsEnabled = true;
         TranscriptionProviderComboBox.IsEnabled = true;
         ParakeetProfileComboBox.IsEnabled = true;
+        SpeakerAttributionComboBox.IsEnabled = true;
     }
 
     protected override async void OnClosed(

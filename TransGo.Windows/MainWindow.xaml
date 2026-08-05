@@ -95,6 +95,25 @@
                               Margin="0,0,0,22"
                               SelectedIndex="1"
                               SelectionChanged="ParakeetProfileComboBox_SelectionChanged">
+                        
+                       <TextBlock Text="Speaker attribution"
+                           Margin="0,0,0,8"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="White"/>
+
+                                        <ComboBox x:Name="SpeakerAttributionComboBox"
+                                          Height="38"
+                                          Padding="8,4"
+                                          Margin="0,0,0,22"
+                                          SelectedIndex="0">
+
+                                            <ComboBoxItem Content="Off"
+                                                Tag="off"/>
+
+                                            <ComboBoxItem Content="Simulated — Development"
+                                                Tag="simulated"/>
+                                            </ComboBox>
 
                         <ComboBoxItem Content="Responsive — lower latency"
                                       Tag="responsive"/>
