@@ -20,6 +20,9 @@ public sealed class ParakeetStreamingTranscriptionEngine
     private ParakeetServiceClient? _client;
     private int? _configuredSampleRate;
 
+    private readonly ParakeetStreamingProfile
+    _streamingProfile;
+
     private bool _isStarting;
     private bool _isRunning;
     private bool _disposed;
@@ -36,6 +39,13 @@ public sealed class ParakeetStreamingTranscriptionEngine
                 return _isRunning;
             }
         }
+    }
+
+    public ParakeetStreamingTranscriptionEngine(
+    ParakeetStreamingProfile streamingProfile =
+        ParakeetStreamingProfile.Accurate)
+    {
+        _streamingProfile = streamingProfile;
     }
 
     public async Task StartAsync(
@@ -69,10 +79,12 @@ public sealed class ParakeetStreamingTranscriptionEngine
         {
             ParakeetServiceHealth health =
                 await _serviceLauncher.EnsureReadyAsync(
+                    _streamingProfile,
                     cancellationToken);
 
             Debug.WriteLine(
                 "Local Parakeet service ready. " +
+                $"Profile: {health.Profile}. " +
                 $"GPU: {health.Gpu}");
 
             await client.ConnectAsync(

@@ -15,6 +15,10 @@ public sealed class ParakeetServiceHealth
     public string Model { get; init; } =
         string.Empty;
 
+    [JsonPropertyName("profile")]
+    public string Profile { get; init; } =
+    string.Empty;
+
     [JsonPropertyName("cuda_available")]
     public bool CudaAvailable { get; init; }
 

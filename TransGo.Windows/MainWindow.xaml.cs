@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using TransGo.Audio.Processing;
@@ -33,6 +33,8 @@ public partial class MainWindow : Window
 
     private readonly CancellationTokenSource
         _windowCancellation = new();
+
+    private int _transcriptionDisconnectHandled;
 
     public MainWindow()
     {
@@ -65,6 +67,89 @@ public partial class MainWindow : Window
         LoadOutputDevices();
     }
 
+    private ParakeetStreamingProfile
+        GetSelectedParakeetProfile()
+    {
+        if (
+            ParakeetProfileComboBox.SelectedItem
+            is ComboBoxItem selectedItem
+            &&
+            string.Equals(
+                selectedItem.Tag?.ToString(),
+                "responsive",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return ParakeetStreamingProfile.Responsive;
+        }
+
+        return ParakeetStreamingProfile.Accurate;
+    }
+
+    private async void
+        ParakeetProfileComboBox_SelectionChanged(
+            object sender,
+            SelectionChangedEventArgs eventArgs)
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        ParakeetStreamingProfile profile =
+            GetSelectedParakeetProfile();
+
+        StatusText.Text =
+            $"Preparing {profile.ToDisplayName()}...";
+
+        ParakeetProfileComboBox.IsEnabled = false;
+
+        StartButton.IsEnabled = false;
+
+        try
+        {
+            ParakeetServiceHealth health =
+                await _parakeetPreloader.EnsureReadyAsync(
+                    profile,
+                    _windowCancellation.Token);
+
+            StatusText.Text =
+                "Local captions ready — " +
+                profile.ToDisplayName();
+
+            Debug.WriteLine(
+                "Parakeet profile loaded. " +
+                $"Profile: {health.Profile}. " +
+                $"GPU: {health.Gpu}");
+        }
+        catch (OperationCanceledException)
+            when (_windowCancellation
+                .IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(
+                "Failed to change Parakeet profile: " +
+                exception);
+
+            StatusText.Text =
+                "Could not change local caption quality";
+        }
+        finally
+        {
+            if (
+                IsLoaded &&
+                !_captureEngine.IsCapturing)
+            {
+                ParakeetProfileComboBox.IsEnabled =
+                    true;
+
+                StartButton.IsEnabled =
+                    _audioDevices.Count > 0;
+            }
+        }
+    }
+
     private async void MainWindow_Loaded(
     object sender,
     RoutedEventArgs eventArgs)
@@ -87,6 +172,7 @@ public partial class MainWindow : Window
             ParakeetServiceHealth health =
                 await _parakeetPreloader
                     .EnsureReadyAsync(
+                        GetSelectedParakeetProfile(),
                         cancellationToken);
 
             /*
@@ -181,7 +267,8 @@ public partial class MainWindow : Window
                 new WhisperTurboTranscriptionEngine(),
 
             "parakeet" =>
-                new ParakeetStreamingTranscriptionEngine(),
+                new ParakeetStreamingTranscriptionEngine(
+                    GetSelectedParakeetProfile()),
 
             "google" =>
                 new GoogleStreamingTranscriptionEngine(),
@@ -297,16 +384,24 @@ public partial class MainWindow : Window
         OutputDeviceComboBox.IsEnabled = false;
         RefreshDevicesButton.IsEnabled = false;
         TranscriptionProviderComboBox.IsEnabled = false;
+        ParakeetProfileComboBox.IsEnabled = false;
 
         string providerName =
             GetSelectedProviderName();
 
         StatusText.Text =
-            providerName.StartsWith(
-                "Local",
-                StringComparison.OrdinalIgnoreCase)
-                    ? "Loading local Sherpa model…"
-                    : "Connecting to Google Speech-to-Text…";
+            providerName switch
+            {
+                "Local — Parakeet GPU" =>
+                    $"Preparing " +
+                    $"{GetSelectedParakeetProfile().ToDisplayName()}...",
+
+                "Google Cloud" =>
+                    "Connecting to Google Speech-to-Text…",
+
+                _ =>
+                    $"Loading {providerName}…"
+            };
 
         ITranscriptionEngine engine =
             CreateSelectedTranscriptionEngine();
@@ -349,6 +444,10 @@ public partial class MainWindow : Window
                     LanguageCode: "en-US",
                     SampleRate: TranscriptionSampleRate,
                     EnableInterimResults: true);
+
+            Interlocked.Exchange(
+                ref _transcriptionDisconnectHandled,
+                0);
 
             /*
              * Start the selected provider before capture so
@@ -466,10 +565,48 @@ public partial class MainWindow : Window
             await engine.SendAsync(
                 chunk);
         }
+
+        catch (InvalidOperationException exception)
+            when (
+                exception.Message.Contains(
+                    "not connected",
+                    StringComparison.OrdinalIgnoreCase))
+        {
+            /*
+             * Only handle the first disconnect. Otherwise every
+             * 100 ms audio chunk produces another exception.
+             */
+            if (
+                Interlocked.Exchange(
+                    ref _transcriptionDisconnectHandled,
+                    1)
+                != 0)
+            {
+                return;
+            }
+
+            Debug.WriteLine(
+                "The transcription service disconnected: " +
+                exception);
+
+            _ = Dispatcher.BeginInvoke(
+                new Action(() =>
+                {
+                    StatusText.Text =
+                        "Transcription service disconnected";
+
+                    StopButton.IsEnabled = false;
+
+                    if (_captureEngine.IsCapturing)
+                    {
+                        _captureEngine.Stop();
+                    }
+                }));
+        }
         catch (Exception exception)
         {
             Debug.WriteLine(
-                $"Sending transcription audio failed: " +
+                "Sending transcription audio failed: " +
                 exception);
         }
     }
@@ -719,6 +856,7 @@ public partial class MainWindow : Window
         OutputDeviceComboBox.IsEnabled = true;
         RefreshDevicesButton.IsEnabled = true;
         TranscriptionProviderComboBox.IsEnabled = true;
+        ParakeetProfileComboBox.IsEnabled = true;
     }
 
     protected override async void OnClosed(

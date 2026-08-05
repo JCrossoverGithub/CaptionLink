@@ -12,6 +12,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 from parakeet_audio import StreamingAudioPreprocessor
 from parakeet_streaming import (
+    ACTIVE_PROFILE_NAME,
     MODEL_FRAME_DURATION_SECONDS,
     MODEL_FRAME_SAMPLE_COUNT,
     MODEL_NAME,
@@ -84,6 +85,7 @@ async def health() -> dict[str, object]:
         "status": "ready" if pipeline is not None else "starting",
         "model_loaded": pipeline is not None,
         "model": MODEL_NAME,
+        "profile": ACTIVE_PROFILE_NAME,
         "cuda_available": torch.cuda.is_available(),
         "gpu": getattr(app.state, "gpu_name", None),
         "streaming": True,
@@ -365,6 +367,7 @@ async def stream_audio(websocket: WebSocket) -> None:
                     await websocket.send_json(
                         {
                             "type": "started",
+                            "profile": ACTIVE_PROFILE_NAME,
                             "sample_rate": sample_rate,
                             "channels": channels,
                             "bits_per_sample": bits_per_sample,
