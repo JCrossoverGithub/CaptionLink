@@ -150,25 +150,31 @@ def apply_nemo_decoder_length_guard(pipeline):
             safe_enc_lens,
         )
 
-    if not has_reported_clamp:
-        lengths_changed = (
-            torch.any(safe_enc_lens != enc_lens).item()
-            or torch.any(
-                safe_enc_lens_chunk != enc_lens_chunk
-            ).item()
-        )
-
-        if lengths_changed:
-            print(
-                "Applied TransGo NeMo decoder-length guard: "
-                f"encoder_time={max_encoder_time}, "
-                f"original_total={enc_lens.tolist()}, "
-                f"safe_total={safe_enc_lens.tolist()}, "
-                f"original_chunk={enc_lens_chunk.tolist()}, "
-                f"safe_chunk={safe_enc_lens_chunk.tolist()}",
-                flush=True,
+        if not has_reported_clamp:
+            lengths_changed = (
+                torch.any(
+                    safe_enc_lens != enc_lens
+                ).item()
+                or torch.any(
+                    safe_enc_lens_chunk
+                    != enc_lens_chunk
+                ).item()
             )
-            has_reported_clamp = True
+
+            if lengths_changed:
+                print(
+                    "Applied TransGo NeMo "
+                    "decoder-length guard: "
+                    f"encoder_time={max_encoder_time}, "
+                    f"original_total={enc_lens.tolist()}, "
+                    f"safe_total={safe_enc_lens.tolist()}, "
+                    f"original_chunk="
+                    f"{enc_lens_chunk.tolist()}, "
+                    f"safe_chunk="
+                    f"{safe_enc_lens_chunk.tolist()}",
+                    flush=True,
+                )
+                has_reported_clamp = True
 
         return original_stateful_transcribe_step(
             requests,
