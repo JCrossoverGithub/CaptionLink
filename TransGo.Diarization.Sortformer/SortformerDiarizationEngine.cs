@@ -14,6 +14,9 @@ public sealed class SortformerDiarizationEngine
 {
     private readonly object _gate = new();
 
+    private readonly SortformerServiceLauncher
+        _serviceLauncher = new();
+
     private SortformerServiceClient? _client;
     private int? _configuredSampleRate;
 
@@ -63,6 +66,14 @@ public sealed class SortformerDiarizationEngine
 
         try
         {
+            SortformerServiceHealth health =
+                await _serviceLauncher.EnsureReadyAsync(
+                    cancellationToken);
+
+            Debug.WriteLine(
+                "Local Sortformer service ready. " +
+                $"GPU: {health.Gpu ?? "unknown"}.");
+
             await client.ConnectAsync(
                 configuration.SampleRate,
                 configuration.MaximumSpeakers,
@@ -569,6 +580,8 @@ public sealed class SortformerDiarizationEngine
         }
         finally
         {
+            await _serviceLauncher.DisposeAsync();
+
             lock (_gate)
             {
                 _disposed = true;
