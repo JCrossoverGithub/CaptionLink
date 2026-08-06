@@ -120,6 +120,8 @@
 
                         <ComboBoxItem Content="Simulated — Development"
                   Tag="simulated"/>
+                        <ComboBoxItem Content="NVIDIA Sortformer - Local GPU"
+                                      Tag="sortformer"/>
                     </ComboBox>
 
                     <TextBlock x:Name="StatusText"
@@ -196,3 +198,4 @@
         </Border>
     </Grid>
 </Window>
+

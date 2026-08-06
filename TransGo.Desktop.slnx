@@ -3,6 +3,7 @@
   <Project Path="TransGo.Audio.Windows/TransGo.Audio.Windows.csproj" />
   <Project Path="TransGo.Core/TransGo.Core.csproj" />
   <Project Path="TransGo.Diarization.Simulated/TransGo.Diarization.Simulated.csproj" />
+  <Project Path="TransGo.Diarization.Sortformer/TransGo.Diarization.Sortformer.csproj" />
   <Project Path="TransGo.Speech.Google/TransGo.Speech.Google.csproj" Id="d9371c1c-2916-4fff-b44b-d50d68c8252e" />
   <Project Path="TransGo.Speech.Parakeet/TransGo.Speech.Parakeet.csproj" Id="3a20c9b6-a70f-426b-a2cb-a49e55a5a32e" />
   <Project Path="TransGo.Speech.Sherpa/TransGo.Speech.Sherpa.csproj" Id="9a4657ea-9b86-456e-bf04-ab5ae2511634" />
