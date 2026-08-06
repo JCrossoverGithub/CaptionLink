@@ -16,6 +16,7 @@
     <ProjectReference Include="..\TransGo.Speech.Parakeet\TransGo.Speech.Parakeet.csproj" />
     <ProjectReference Include="..\TransGo.Speech.Sherpa\TransGo.Speech.Sherpa.csproj" />
     <ProjectReference Include="..\TransGo.Diarization.Simulated\TransGo.Diarization.Simulated.csproj" />
+    <ProjectReference Include="..\TransGo.Diarization.Sortformer\TransGo.Diarization.Sortformer.csproj" />
   </ItemGroup>
 
 </Project>
