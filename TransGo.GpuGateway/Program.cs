@@ -20,6 +20,12 @@ if (string.IsNullOrWhiteSpace(gatewayToken))
 
 var app = builder.Build();
 
+const string BrowserWebSocketSubprotocol =
+    "transgo-v1";
+
+const string BrowserTokenSubprotocolPrefix =
+    "transgo-token.";
+
 app.UseWebSockets(
     new WebSocketOptions
     {
@@ -53,22 +59,35 @@ app.MapGet(
             return;
         }
 
-        if (!HasValidBearerToken(
+        bool hasValidBearerToken =
+            HasValidBearerToken(
                 context.Request,
-                gatewayToken))
+                gatewayToken);
+
+        bool hasValidBrowserToken =
+            HasValidBrowserWebSocketToken(
+                context.Request,
+                gatewayToken,
+                BrowserWebSocketSubprotocol,
+                BrowserTokenSubprotocolPrefix);
+
+        if (!hasValidBearerToken &&
+            !hasValidBrowserToken)
         {
             context.Response.StatusCode =
                 StatusCodes.Status401Unauthorized;
 
             await context.Response.WriteAsync(
-                "A valid bearer token is required.",
+                "A valid gateway token is required.",
                 context.RequestAborted);
 
             return;
         }
 
-        using var socket =
-            await context.WebSockets.AcceptWebSocketAsync();
+        using var socket = hasValidBrowserToken
+            ? await context.WebSockets.AcceptWebSocketAsync(
+                BrowserWebSocketSubprotocol)
+            : await context.WebSockets.AcceptWebSocketAsync();
 
         await TranscriptionWebSocketSession.RunAsync(
             socket,
@@ -106,4 +125,98 @@ static bool HasValidBearerToken(
         CryptographicOperations.FixedTimeEquals(
             expectedBytes,
             suppliedBytes);
+}
+static bool HasValidBrowserWebSocketToken(
+    HttpRequest request,
+    string expectedToken,
+    string browserWebSocketSubprotocol,
+    string browserTokenSubprotocolPrefix)
+{
+    string requestedProtocols =
+        request.Headers["Sec-WebSocket-Protocol"].ToString();
+
+    if (string.IsNullOrWhiteSpace(requestedProtocols))
+    {
+        return false;
+    }
+
+    string[] protocols = requestedProtocols.Split(
+        ',',
+        StringSplitOptions.TrimEntries |
+        StringSplitOptions.RemoveEmptyEntries);
+
+    if (!protocols.Contains(
+            browserWebSocketSubprotocol,
+            StringComparer.Ordinal))
+    {
+        return false;
+    }
+
+    string? encodedToken = null;
+
+    foreach (string protocol in protocols)
+    {
+        if (!protocol.StartsWith(
+                browserTokenSubprotocolPrefix,
+                StringComparison.Ordinal))
+        {
+            continue;
+        }
+
+        if (encodedToken is not null)
+        {
+            return false;
+        }
+
+        encodedToken =
+            protocol[browserTokenSubprotocolPrefix.Length..];
+    }
+
+    if (string.IsNullOrWhiteSpace(encodedToken))
+    {
+        return false;
+    }
+
+    byte[] suppliedBytes;
+
+    try
+    {
+        suppliedBytes = DecodeBase64Url(encodedToken);
+    }
+    catch (FormatException)
+    {
+        return false;
+    }
+
+    byte[] expectedBytes =
+        Encoding.UTF8.GetBytes(expectedToken);
+
+    return expectedBytes.Length == suppliedBytes.Length &&
+        CryptographicOperations.FixedTimeEquals(
+            expectedBytes,
+            suppliedBytes);
+}
+
+static byte[] DecodeBase64Url(string value)
+{
+    string base64 = value
+        .Replace('-', '+')
+        .Replace('_', '/');
+
+    int remainder = base64.Length % 4;
+
+    if (remainder == 1)
+    {
+        throw new FormatException(
+            "The browser token is not valid Base64URL data.");
+    }
+
+    if (remainder > 0)
+    {
+        base64 = base64.PadRight(
+            base64.Length + (4 - remainder),
+            '=');
+    }
+
+    return Convert.FromBase64String(base64);
 }
