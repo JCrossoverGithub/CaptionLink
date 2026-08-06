@@ -84,23 +84,42 @@
                     </ComboBox>
 
                     <TextBlock Text="Local caption quality"
-                               Margin="0,0,0,8"
-                               FontSize="14"
-                               FontWeight="SemiBold"
-                               Foreground="White"/>
+           Margin="0,0,0,8"
+           FontSize="14"
+           FontWeight="SemiBold"
+           Foreground="White"/>
 
                     <ComboBox x:Name="ParakeetProfileComboBox"
-                              Height="38"
-                              Padding="8,4"
-                              Margin="0,0,0,22"
-                              SelectedIndex="1"
-                              SelectionChanged="ParakeetProfileComboBox_SelectionChanged">
+          Height="38"
+          Padding="8,4"
+          Margin="0,0,0,22"
+          SelectedIndex="1"
+          SelectionChanged="ParakeetProfileComboBox_SelectionChanged">
 
                         <ComboBoxItem Content="Responsive — lower latency"
-                                      Tag="responsive"/>
+                  Tag="responsive"/>
 
                         <ComboBoxItem Content="Accurate — better context"
-                                      Tag="accurate"/>
+                  Tag="accurate"/>
+                    </ComboBox>
+
+                    <TextBlock Text="Speaker attribution"
+           Margin="0,0,0,8"
+           FontSize="14"
+           FontWeight="SemiBold"
+           Foreground="White"/>
+
+                    <ComboBox x:Name="SpeakerAttributionComboBox"
+          Height="38"
+          Padding="8,4"
+          Margin="0,0,0,22"
+          SelectedIndex="0">
+
+                        <ComboBoxItem Content="Off"
+                  Tag="off"/>
+
+                        <ComboBoxItem Content="Simulated — Development"
+                  Tag="simulated"/>
                     </ComboBox>
 
                     <TextBlock x:Name="StatusText"

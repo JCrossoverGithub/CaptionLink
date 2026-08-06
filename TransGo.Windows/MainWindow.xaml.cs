@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -12,6 +13,8 @@ using TransGo.Core.Transcription;
 using TransGo.Speech.Google;
 using TransGo.Speech.Sherpa;
 using TransGo.Speech.Parakeet;
+using TransGo.Core.Diarization;
+using TransGo.Diarization.Simulated;
 
 namespace TransGo.Windows;
 
@@ -26,6 +29,8 @@ public partial class MainWindow : Window
     private readonly List<AudioOutputDevice> _audioDevices = new();
 
     private ITranscriptionEngine? _transcriptionEngine;
+    private IDiarizationEngine? _diarizationEngine;
+
     private string _finalTranscript = string.Empty;
 
     private readonly ParakeetServiceLauncher
@@ -35,6 +40,12 @@ public partial class MainWindow : Window
         _windowCancellation = new();
 
     private int _transcriptionDisconnectHandled;
+
+    private readonly ConcurrentDictionary<
+    string,
+    SpeakerActivity> _speakerActivities = new();
+
+    private int _diarizationFailureHandled;
 
     public MainWindow()
     {
@@ -65,6 +76,26 @@ public partial class MainWindow : Window
             AudioNormalizer_ChunkAvailable;
 
         LoadOutputDevices();
+    }
+
+    private IDiarizationEngine?
+        CreateSelectedDiarizationEngine()
+    {
+        return IsSimulatedDiarizationSelected()
+            ? new SimulatedDiarizationEngine()
+            : null;
+    }
+
+    private bool IsSimulatedDiarizationSelected()
+    {
+        return
+            SpeakerAttributionComboBox.SelectedItem
+                is ComboBoxItem selectedItem
+            &&
+            string.Equals(
+                selectedItem.Tag?.ToString(),
+                "simulated",
+                StringComparison.OrdinalIgnoreCase);
     }
 
     private ParakeetStreamingProfile
@@ -151,8 +182,8 @@ public partial class MainWindow : Window
     }
 
     private async void MainWindow_Loaded(
-    object sender,
-    RoutedEventArgs eventArgs)
+        object sender,
+        RoutedEventArgs eventArgs)
     {
         await PrepareParakeetAsync(
             _windowCancellation.Token);
@@ -378,6 +409,11 @@ public partial class MainWindow : Window
             await DisposeTranscriptionEngineAsync();
         }
 
+        if (_diarizationEngine is not null)
+        {
+            await DisposeDiarizationEngineAsync();
+        }
+
         StartButton.IsEnabled = false;
         StopButton.IsEnabled = false;
 
@@ -385,6 +421,7 @@ public partial class MainWindow : Window
         RefreshDevicesButton.IsEnabled = false;
         TranscriptionProviderComboBox.IsEnabled = false;
         ParakeetProfileComboBox.IsEnabled = false;
+        SpeakerAttributionComboBox.IsEnabled = false;
 
         string providerName =
             GetSelectedProviderName();
@@ -411,9 +448,27 @@ public partial class MainWindow : Window
         engine.ResultReceived +=
             TranscriptionEngine_ResultReceived;
 
+        IDiarizationEngine? diarizationEngine =
+            CreateSelectedDiarizationEngine();
+
+        _diarizationEngine =
+            diarizationEngine;
+
+        if (diarizationEngine is not null)
+        {
+            diarizationEngine.ActivityReceived +=
+                DiarizationEngine_ActivityReceived;
+        }
+
         try
         {
             _audioNormalizer.Reset();
+
+            _speakerActivities.Clear();
+
+            Interlocked.Exchange(
+                ref _diarizationFailureHandled,
+                0);
 
             _finalTranscript =
                 string.Empty;
@@ -456,12 +511,53 @@ public partial class MainWindow : Window
             await engine.StartAsync(
                 configuration);
 
+            bool speakerAttributionUnavailable =
+                false;
+
+            if (diarizationEngine is not null)
+            {
+                try
+                {
+                    var diarizationConfiguration =
+                        new DiarizationConfiguration(
+                            SampleRate:
+                                TranscriptionSampleRate,
+
+                            MaximumSpeakers:
+                                2);
+
+                    await diarizationEngine.StartAsync(
+                        diarizationConfiguration);
+                }
+                catch (Exception exception)
+                {
+                    /*
+                     * Speaker attribution is optional. If it cannot
+                     * start, ordinary captions must continue.
+                     */
+                    speakerAttributionUnavailable =
+                        true;
+
+                    Debug.WriteLine(
+                        "Speaker attribution startup failed: " +
+                        exception);
+
+                    await DisposeDiarizationEngineAsync();
+                }
+            }
+
             _captureEngine.Start(
                 selectedDevice.Id);
 
             StatusText.Text =
-                $"Listening with {providerName}: " +
-                selectedDevice.Name;
+                speakerAttributionUnavailable
+                    ? $"Listening with {providerName} · " +
+                      "speaker attribution unavailable"
+                    : _diarizationEngine?.IsRunning == true
+                        ? $"Listening with {providerName} · " +
+                          "speaker attribution enabled"
+                        : $"Listening with {providerName}: " +
+                          selectedDevice.Name;
 
             StopButton.IsEnabled = true;
         }
@@ -473,13 +569,33 @@ public partial class MainWindow : Window
                 {
                     _captureEngine.Stop();
                 }
+            }
+            catch (Exception cleanupException)
+            {
+                Debug.WriteLine(
+                    "Capture startup cleanup failed: " +
+                    cleanupException);
+            }
 
+            try
+            {
+                await DisposeDiarizationEngineAsync();
+            }
+            catch (Exception cleanupException)
+            {
+                Debug.WriteLine(
+                    "Speaker attribution startup cleanup failed: " +
+                    cleanupException);
+            }
+
+            try
+            {
                 await DisposeTranscriptionEngineAsync();
             }
             catch (Exception cleanupException)
             {
                 Debug.WriteLine(
-                    $"Startup cleanup failed: " +
+                    "Transcription startup cleanup failed: " +
                     cleanupException);
             }
 
@@ -609,6 +725,60 @@ public partial class MainWindow : Window
                 "Sending transcription audio failed: " +
                 exception);
         }
+
+        IDiarizationEngine? diarizationEngine =
+    _diarizationEngine;
+
+        if (
+            diarizationEngine is null ||
+            !diarizationEngine.IsRunning)
+        {
+            return;
+        }
+
+        try
+        {
+            await diarizationEngine.SendAsync(
+                chunk);
+        }
+        catch (Exception exception)
+        {
+            /*
+             * Diarization failures must not stop ordinary
+             * transcription or audio capture.
+             */
+            if (
+                Interlocked.Exchange(
+                    ref _diarizationFailureHandled,
+                    1)
+                != 0)
+            {
+                return;
+            }
+
+            Debug.WriteLine(
+                "Sending audio to speaker attribution failed: " +
+                exception);
+
+            try
+            {
+                await DisposeDiarizationEngineAsync();
+            }
+            catch (Exception cleanupException)
+            {
+                Debug.WriteLine(
+                    "Speaker attribution cleanup failed: " +
+                    cleanupException);
+            }
+
+            _ = Dispatcher.BeginInvoke(
+                new Action(() =>
+                {
+                    StatusText.Text =
+                        "Speaker attribution unavailable; " +
+                        "captions will continue";
+                }));
+        }
     }
 
     private static string GetOverlayCaption(
@@ -680,12 +850,56 @@ public partial class MainWindow : Window
             words[^maximumWords..]);
     }
 
+    private void DiarizationEngine_ActivityReceived(
+        object? sender,
+        SpeakerActivityEventArgs e)
+    {
+        SpeakerActivity activity =
+            e.Activity;
+
+        _speakerActivities.AddOrUpdate(
+            activity.ActivityId,
+            activity,
+            (_, existingActivity) =>
+                activity.Sequence >=
+                existingActivity.Sequence
+                    ? activity
+                    : existingActivity);
+
+        if (activity.IsFinal)
+        {
+            Debug.WriteLine(
+                "Speaker activity finalized: " +
+                $"{activity.SpeakerId}, " +
+                $"{activity.StartTime.TotalSeconds:0.0}s–" +
+                $"{activity.EndTime.TotalSeconds:0.0}s");
+        }
+    }
+
     private void TranscriptionEngine_ResultReceived(
         object? sender,
         TranscriptResultEventArgs e)
     {
         TranscriptResult result =
             e.Result;
+
+        string? resolvedSpeakerId =
+            SpeakerAttributionResolver.ResolveSpeakerId(
+                result,
+                _speakerActivities.Values);
+
+        if (!string.IsNullOrWhiteSpace(
+                resolvedSpeakerId))
+        {
+            result = result with
+            {
+                SpeakerId =
+                    resolvedSpeakerId,
+            };
+        }
+
+        string displayText =
+            GetTranscriptDisplayText(result);
 
         _ = Dispatcher.BeginInvoke(new Action(() =>
         {
@@ -694,11 +908,14 @@ public partial class MainWindow : Window
                 if (!string.IsNullOrWhiteSpace(
                         _finalTranscript))
                 {
-                    _finalTranscript += " ";
+                    _finalTranscript +=
+                        result.SpeakerId is null
+                            ? " "
+                            : Environment.NewLine;
                 }
 
                 _finalTranscript +=
-                    result.Text;
+                    displayText;
 
                 /*
                  * The main window keeps complete finalized
@@ -713,11 +930,24 @@ public partial class MainWindow : Window
                  * Interim text is temporary and may be replaced
                  * by the recognition engine.
                  */
-                TranscriptText.Text =
-                    string.IsNullOrWhiteSpace(
-                        _finalTranscript)
-                        ? result.Text
-                        : $"{_finalTranscript} {result.Text}";
+                if (string.IsNullOrWhiteSpace(
+                        _finalTranscript))
+                {
+                    TranscriptText.Text =
+                        displayText;
+                }
+                else
+                {
+                    string separator =
+                        result.SpeakerId is null
+                            ? " "
+                            : Environment.NewLine;
+
+                    TranscriptText.Text =
+                        _finalTranscript +
+                        separator +
+                        displayText;
+                }
             }
 
             /*
@@ -725,11 +955,49 @@ public partial class MainWindow : Window
              * never the entire accumulated transcript.
              */
             _captionOverlay.SetCaption(
-                GetOverlayCaption(result.Text),
+                GetOverlayCaption(displayText),
                 result.IsFinal);
         }));
     }
 
+    private static string GetTranscriptDisplayText(
+    TranscriptResult result)
+    {
+        if (string.IsNullOrWhiteSpace(
+                result.SpeakerId))
+        {
+            return result.Text;
+        }
+
+        string speakerLabel =
+            FormatSpeakerLabel(
+                result.SpeakerId);
+
+        return $"{speakerLabel}: {result.Text}";
+    }
+
+    private static string FormatSpeakerLabel(
+        string speakerId)
+    {
+        const string internalPrefix =
+            "speaker-";
+
+        if (
+            speakerId.StartsWith(
+                internalPrefix,
+                StringComparison.OrdinalIgnoreCase)
+            &&
+            int.TryParse(
+                speakerId[internalPrefix.Length..],
+                out int speakerNumber)
+            &&
+            speakerNumber > 0)
+        {
+            return $"Speaker {speakerNumber}";
+        }
+
+        return speakerId;
+    }
     private void CaptureEngine_MetricsUpdated(
         object? sender,
         AudioCaptureMetricsEventArgs e)
@@ -752,6 +1020,25 @@ public partial class MainWindow : Window
         AudioCaptureStoppedEventArgs e)
     {
         Exception? transcriptionError = null;
+        Exception? diarizationError = null;
+
+        try
+        {
+            /*
+             * Finalize speaker activity before transcription
+             * publishes any final buffered result.
+             */
+            await DisposeDiarizationEngineAsync();
+        }
+        catch (Exception exception)
+        {
+            diarizationError =
+                exception;
+
+            Debug.WriteLine(
+                "Stopping speaker attribution failed: " +
+                exception);
+        }
 
         try
         {
@@ -785,6 +1072,13 @@ public partial class MainWindow : Window
                 return;
             }
 
+            if (diarizationError is not null)
+            {
+                Debug.WriteLine(
+                    "Speaker attribution stopped with an error: " +
+                    diarizationError);
+            }
+
             if (transcriptionError is not null)
             {
                 StatusText.Text =
@@ -801,6 +1095,43 @@ public partial class MainWindow : Window
 
             StatusText.Text = "Stopped";
         }));
+    }
+
+    private async Task
+        DisposeDiarizationEngineAsync()
+    {
+        IDiarizationEngine? engine =
+            _diarizationEngine;
+
+        if (engine is null)
+        {
+            return;
+        }
+
+        /*
+         * Remove the shared reference immediately so new
+         * audio chunks cannot be queued during shutdown.
+         */
+        _diarizationEngine = null;
+
+        try
+        {
+            if (engine.IsRunning)
+            {
+                /*
+                 * Keep the event subscribed during StopAsync
+                 * so the engine can finalize its last interval.
+                 */
+                await engine.StopAsync();
+            }
+        }
+        finally
+        {
+            engine.ActivityReceived -=
+                DiarizationEngine_ActivityReceived;
+
+            await engine.DisposeAsync();
+        }
     }
 
     private async Task
@@ -857,6 +1188,7 @@ public partial class MainWindow : Window
         RefreshDevicesButton.IsEnabled = true;
         TranscriptionProviderComboBox.IsEnabled = true;
         ParakeetProfileComboBox.IsEnabled = true;
+        SpeakerAttributionComboBox.IsEnabled = true;
     }
 
     protected override async void OnClosed(
@@ -896,13 +1228,14 @@ public partial class MainWindow : Window
 
         try
         {
+            await DisposeDiarizationEngineAsync();
             await DisposeTranscriptionEngineAsync();
         }
         catch (Exception exception)
         {
             Debug.WriteLine(
-                $"Transcription cleanup failed: " +
-                exception);
+                "Transcription or speaker attribution " +
+                $"cleanup failed: {exception}");
         }
     }
 }

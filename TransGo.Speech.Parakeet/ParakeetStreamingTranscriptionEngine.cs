@@ -341,6 +341,16 @@ public sealed class ParakeetStreamingTranscriptionEngine
                 ? sequenceElement.GetInt64()
                 : 0;
 
+        TimeSpan? resultStartTime =
+            TryReadTimeSpanSeconds(
+                root,
+                "result_start_time_seconds");
+
+                TimeSpan? resultEndTime =
+                    TryReadTimeSpanSeconds(
+                        root,
+                        "result_end_time_seconds");
+
         var result =
             new TranscriptResult(
                 SegmentId: segmentId,
@@ -348,11 +358,42 @@ public sealed class ParakeetStreamingTranscriptionEngine
                 Text: text.Trim(),
                 IsFinal: isFinal,
                 Stability: null,
-                ResultEndTime: null);
+                ResultEndTime: resultEndTime)
+            {
+                ResultStartTime =
+                    resultStartTime,
+            };
 
         ResultReceived?.Invoke(
             this,
             new TranscriptResultEventArgs(result));
+    }
+
+    private static TimeSpan?
+    TryReadTimeSpanSeconds(
+        JsonElement root,
+        string propertyName)
+    {
+        if (
+            !root.TryGetProperty(
+                propertyName,
+                out JsonElement valueElement)
+            ||
+            valueElement.ValueKind !=
+                JsonValueKind.Number
+            ||
+            !valueElement.TryGetDouble(
+                out double seconds)
+            ||
+            !double.IsFinite(seconds)
+            ||
+            seconds < 0)
+        {
+            return null;
+        }
+
+        return TimeSpan.FromSeconds(
+            seconds);
     }
 
     private static void ValidateConfiguration(
