@@ -15,6 +15,7 @@ using TransGo.Speech.Sherpa;
 using TransGo.Speech.Parakeet;
 using TransGo.Core.Diarization;
 using TransGo.Diarization.Simulated;
+using TransGo.Diarization.Sortformer;
 
 namespace TransGo.Windows;
 
@@ -81,9 +82,30 @@ public partial class MainWindow : Window
     private IDiarizationEngine?
         CreateSelectedDiarizationEngine()
     {
-        return IsSimulatedDiarizationSelected()
-            ? new SimulatedDiarizationEngine()
-            : null;
+        if (
+            SpeakerAttributionComboBox.SelectedItem
+                is not ComboBoxItem selectedItem)
+        {
+            return null;
+        }
+
+        string mode =
+            selectedItem.Tag?
+                .ToString()?
+                .Trim()
+                .ToLowerInvariant()
+            ?? "off";
+
+        return mode switch
+        {
+            "simulated" =>
+                new SimulatedDiarizationEngine(),
+
+            "sortformer" =>
+                new SortformerDiarizationEngine(),
+
+            _ => null,
+        };
     }
 
     private bool IsSimulatedDiarizationSelected()
@@ -524,7 +546,7 @@ public partial class MainWindow : Window
                                 TranscriptionSampleRate,
 
                             MaximumSpeakers:
-                                2);
+                                4);
 
                     await diarizationEngine.StartAsync(
                         diarizationConfiguration);
