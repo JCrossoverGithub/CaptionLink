@@ -905,19 +905,30 @@ public partial class MainWindow : Window
         TranscriptResult result =
             e.Result;
 
-        string? resolvedSpeakerId =
-            SpeakerAttributionResolver.ResolveSpeakerId(
-                result,
-                _speakerActivities.Values);
+        SpeakerAttributionDecision
+            attributionDecision =
+                SpeakerAttributionResolver.Resolve(
+                    result,
+                    _speakerActivities.Values);
 
-        if (!string.IsNullOrWhiteSpace(
-                resolvedSpeakerId))
+        if (
+            !string.IsNullOrWhiteSpace(
+                attributionDecision
+                    .CompositeSpeakerId))
         {
             result = result with
             {
                 SpeakerId =
-                    resolvedSpeakerId,
+                    attributionDecision
+                        .CompositeSpeakerId,
             };
+        }
+
+        if (result.IsFinal)
+        {
+            LogSpeakerAttributionDecision(
+                result,
+                attributionDecision);
         }
 
         string displayText =
@@ -1001,6 +1012,24 @@ public partial class MainWindow : Window
     private static string FormatSpeakerLabel(
         string speakerId)
     {
+        string[] speakerIds =
+            speakerId.Split(
+                '+',
+                StringSplitOptions
+                    .RemoveEmptyEntries |
+                StringSplitOptions
+                    .TrimEntries);
+
+        return string.Join(
+            " + ",
+            speakerIds.Select(
+                FormatSingleSpeakerLabel));
+    }
+
+    private static string
+        FormatSingleSpeakerLabel(
+            string speakerId)
+    {
         const string internalPrefix =
             "speaker-";
 
@@ -1010,7 +1039,8 @@ public partial class MainWindow : Window
                 StringComparison.OrdinalIgnoreCase)
             &&
             int.TryParse(
-                speakerId[internalPrefix.Length..],
+                speakerId[
+                    internalPrefix.Length..],
                 out int speakerNumber)
             &&
             speakerNumber > 0)
@@ -1019,6 +1049,55 @@ public partial class MainWindow : Window
         }
 
         return speakerId;
+    }
+
+    private static void
+        LogSpeakerAttributionDecision(
+            TranscriptResult result,
+            SpeakerAttributionDecision decision)
+    {
+        if (
+            result.ResultStartTime is not
+                TimeSpan resultStart
+            ||
+            result.ResultEndTime is not
+                TimeSpan resultEnd)
+        {
+            return;
+        }
+
+        string selectedSpeakers =
+            decision.CompositeSpeakerId ??
+            "none";
+
+        string overlapDetails =
+            decision.Overlaps.Count == 0
+                ? "no diarization overlap"
+                : string.Join(
+                    "; ",
+                    decision.Overlaps.Select(
+                        overlap =>
+                            $"{overlap.SpeakerId}: " +
+                            $"total " +
+                            $"{overlap.OverlapDuration.TotalSeconds:0.00}s " +
+                            $"({overlap.SegmentCoverage:P0}), " +
+                            $"concurrent " +
+                            $"{overlap.ConcurrentWithPrimaryDuration.TotalSeconds:0.00}s"));
+
+        string loggedText =
+            result.Text.Length <= 160
+                ? result.Text
+                : result.Text[..160] +
+                  "...";
+
+        Debug.WriteLine(
+            "Speaker attribution decision: " +
+            $"{resultStart.TotalSeconds:0.00}s-" +
+            $"{resultEnd.TotalSeconds:0.00}s; " +
+            $"selected={selectedSpeakers}; " +
+            $"overlapping={decision.IsOverlapping}; " +
+            $"{overlapDetails}; " +
+            $"text=\"{loggedText}\"");
     }
     private void CaptureEngine_MetricsUpdated(
         object? sender,
@@ -1261,3 +1340,4 @@ public partial class MainWindow : Window
         }
     }
 }
+

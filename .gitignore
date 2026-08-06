@@ -492,3 +492,5 @@ service-account*.json
 TransGo.Benchmarks/audio/
 TransGo.Benchmarks/results/raw/
 TransGo.Benchmarks/.venv/
+
+TransGo.LocalDiarization.Sortformer/diagnostics/
