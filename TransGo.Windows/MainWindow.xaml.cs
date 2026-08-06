@@ -883,6 +883,24 @@ public partial class MainWindow : Window
         TranscriptResult result =
             e.Result;
 
+        string? resolvedSpeakerId =
+            SpeakerAttributionResolver.ResolveSpeakerId(
+                result,
+                _speakerActivities.Values);
+
+        if (!string.IsNullOrWhiteSpace(
+                resolvedSpeakerId))
+        {
+            result = result with
+            {
+                SpeakerId =
+                    resolvedSpeakerId,
+            };
+        }
+
+        string displayText =
+            GetTranscriptDisplayText(result);
+
         _ = Dispatcher.BeginInvoke(new Action(() =>
         {
             if (result.IsFinal)
@@ -890,11 +908,14 @@ public partial class MainWindow : Window
                 if (!string.IsNullOrWhiteSpace(
                         _finalTranscript))
                 {
-                    _finalTranscript += " ";
+                    _finalTranscript +=
+                        result.SpeakerId is null
+                            ? " "
+                            : Environment.NewLine;
                 }
 
                 _finalTranscript +=
-                    result.Text;
+                    displayText;
 
                 /*
                  * The main window keeps complete finalized
@@ -909,11 +930,24 @@ public partial class MainWindow : Window
                  * Interim text is temporary and may be replaced
                  * by the recognition engine.
                  */
-                TranscriptText.Text =
-                    string.IsNullOrWhiteSpace(
-                        _finalTranscript)
-                        ? result.Text
-                        : $"{_finalTranscript} {result.Text}";
+                if (string.IsNullOrWhiteSpace(
+                        _finalTranscript))
+                {
+                    TranscriptText.Text =
+                        displayText;
+                }
+                else
+                {
+                    string separator =
+                        result.SpeakerId is null
+                            ? " "
+                            : Environment.NewLine;
+
+                    TranscriptText.Text =
+                        _finalTranscript +
+                        separator +
+                        displayText;
+                }
             }
 
             /*
@@ -921,11 +955,49 @@ public partial class MainWindow : Window
              * never the entire accumulated transcript.
              */
             _captionOverlay.SetCaption(
-                GetOverlayCaption(result.Text),
+                GetOverlayCaption(displayText),
                 result.IsFinal);
         }));
     }
 
+    private static string GetTranscriptDisplayText(
+    TranscriptResult result)
+    {
+        if (string.IsNullOrWhiteSpace(
+                result.SpeakerId))
+        {
+            return result.Text;
+        }
+
+        string speakerLabel =
+            FormatSpeakerLabel(
+                result.SpeakerId);
+
+        return $"{speakerLabel}: {result.Text}";
+    }
+
+    private static string FormatSpeakerLabel(
+        string speakerId)
+    {
+        const string internalPrefix =
+            "speaker-";
+
+        if (
+            speakerId.StartsWith(
+                internalPrefix,
+                StringComparison.OrdinalIgnoreCase)
+            &&
+            int.TryParse(
+                speakerId[internalPrefix.Length..],
+                out int speakerNumber)
+            &&
+            speakerNumber > 0)
+        {
+            return $"Speaker {speakerNumber}";
+        }
+
+        return speakerId;
+    }
     private void CaptureEngine_MetricsUpdated(
         object? sender,
         AudioCaptureMetricsEventArgs e)
