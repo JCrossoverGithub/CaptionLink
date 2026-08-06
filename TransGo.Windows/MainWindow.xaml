@@ -70,6 +70,9 @@
                         <ComboBoxItem Content="Local — Parakeet GPU"
                                       Tag="parakeet"/>
 
+                        <ComboBoxItem Content="Remote — TransGo GPU Gateway"
+                                      Tag="remote"/>
+
                         <ComboBoxItem Content="Google Cloud"
                                       Tag="google"/>
 
