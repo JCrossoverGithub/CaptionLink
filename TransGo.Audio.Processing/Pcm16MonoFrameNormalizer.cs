@@ -14,7 +14,9 @@ public sealed class Pcm16MonoFrameNormalizer
     private int? _sampleRate;
     private long _chunkSequence;
     private DateTimeOffset? _nextChunkCapturedAt;
+    private TimeSpan _nextChunkSessionStart;
     private bool _disposed;
+
 
     public event EventHandler<TranscriptionAudioChunkEventArgs>?
         ChunkAvailable;
@@ -93,16 +95,26 @@ public sealed class Pcm16MonoFrameNormalizer
                 DateTimeOffset capturedAt =
                     _nextChunkCapturedAt!.Value;
 
+                var completedChunk =
+                new TranscriptionAudioChunk(
+                    Sequence: sequence,
+                    CapturedAt: capturedAt,
+                    Data: chunkData,
+                    SampleRate: frame.SampleRate)
+                {
+                    SessionStartTime =
+                        _nextChunkSessionStart,
+                };
+
                 completedChunks.Add(
-                    new TranscriptionAudioChunk(
-                        Sequence: sequence,
-                        CapturedAt: capturedAt,
-                        Data: chunkData,
-                        SampleRate: frame.SampleRate));
+                    completedChunk);
 
                 _nextChunkCapturedAt =
-                    capturedAt.AddMilliseconds(
-                        ChunkDurationMilliseconds);
+                    capturedAt.Add(
+                        completedChunk.Duration);
+
+                _nextChunkSessionStart =
+                    completedChunk.SessionEndTime;
             }
 
             PreserveIncompleteRemainder(
@@ -362,6 +374,7 @@ public sealed class Pcm16MonoFrameNormalizer
             _sampleRate = null;
             _chunkSequence = 0;
             _nextChunkCapturedAt = null;
+            _nextChunkSessionStart = TimeSpan.Zero;
         }
     }
 

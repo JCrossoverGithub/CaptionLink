@@ -229,6 +229,7 @@ async def stream_audio(websocket: WebSocket) -> None:
 
     result_sequence = 0
     segment_number = 1
+    segment_start_seconds = 0.0
     last_partial_text = ""
 
     audio_preprocessor: StreamingAudioPreprocessor | None = None
@@ -261,6 +262,7 @@ async def stream_audio(websocket: WebSocket) -> None:
     ) -> None:
         nonlocal result_sequence
         nonlocal segment_number
+        nonlocal segment_start_seconds
         nonlocal last_partial_text
 
         final_text = normalize_transcript_text(
@@ -269,6 +271,14 @@ async def stream_audio(websocket: WebSocket) -> None:
 
         partial_text = normalize_transcript_text(
             result.partial_text
+        )
+
+        # This must be calculated for every pipeline result,
+        # before either the final or partial branches use it.
+        result_end_seconds = (
+            model_sample_count / MODEL_SAMPLE_RATE
+            if model_sample_count > 0
+            else 0.0
         )
 
         if (
@@ -288,7 +298,19 @@ async def stream_audio(websocket: WebSocket) -> None:
                     "sequence": result_sequence,
                     "text": final_text,
                     "is_final": True,
+                    "result_start_time_seconds": round(
+                        segment_start_seconds,
+                        3,
+                    ),
+                    "result_end_time_seconds": round(
+                        result_end_seconds,
+                        3,
+                    ),
                 }
+            )
+
+            segment_start_seconds = (
+                result_end_seconds
             )
 
             segment_number += 1
@@ -313,6 +335,14 @@ async def stream_audio(websocket: WebSocket) -> None:
                     "sequence": result_sequence,
                     "text": partial_text,
                     "is_final": False,
+                    "result_start_time_seconds": round(
+                        segment_start_seconds,
+                        3,
+                    ),
+                    "result_end_time_seconds": round(
+                        result_end_seconds,
+                        3,
+                    ),
                 }
             )
 
@@ -430,6 +460,7 @@ async def stream_audio(websocket: WebSocket) -> None:
 
                     result_sequence = 0
                     segment_number = 1
+                    segment_start_seconds = 0.0
                     last_partial_text = ""
 
                     session_started = True
