@@ -8,6 +8,18 @@ const statusElement = document.querySelector("#status");
 
 initialize().catch(showError);
 
+gatewayUrlInput.addEventListener("input", () => {
+  void chrome.storage.local.set({
+    gatewayUrl: gatewayUrlInput.value
+  });
+});
+
+gatewayTokenInput.addEventListener("input", () => {
+  void chrome.storage.local.set({
+    gatewayToken: gatewayTokenInput.value
+  });
+});
+
 startButton.addEventListener("click", async () => {
   setBusy(true);
 
