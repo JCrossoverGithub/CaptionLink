@@ -25,6 +25,8 @@
         "https://*/*"
       ],
       "js": [
+        "latency.js",
+        "caption-state.js",
         "content.js"
       ],
       "run_at": "document_start"

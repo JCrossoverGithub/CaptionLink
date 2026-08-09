@@ -20,3 +20,7 @@ TransGo Desktop is a Windows application that captures desktop output audio and 
 ## Overlap benchmark
 
 The [VoxConverse benchmark guide](docs/overlap-benchmark.md) explains how to measure the production Sortformer overlap path against v0.3 reference annotations without committing the dataset or generated results.
+
+## Remote caption latency
+
+The [end-to-end latency guide](docs/end-to-end-latency.md) documents the monotonic capture-to-display measurements across the Chrome client, GPU gateway, and Parakeet service.

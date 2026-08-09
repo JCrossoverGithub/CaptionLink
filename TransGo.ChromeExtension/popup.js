@@ -5,6 +5,8 @@ const gatewayTokenInput = document.querySelector("#gateway-token");
 const startButton = document.querySelector("#start");
 const stopButton = document.querySelector("#stop");
 const statusElement = document.querySelector("#status");
+const latencySection = document.querySelector("#latency");
+const latencySummaryElement = document.querySelector("#latency-summary");
 
 initialize().catch(showError);
 
@@ -68,6 +70,7 @@ stopButton.addEventListener("click", async () => {
     }
 
     showStatus("Captions stopped.");
+    await loadLatencyReport();
   } catch (error) {
     showError(error);
   } finally {
@@ -78,7 +81,8 @@ stopButton.addEventListener("click", async () => {
 async function initialize() {
   const settings = await chrome.storage.local.get([
     "gatewayUrl",
-    "gatewayToken"
+    "gatewayToken",
+    "lastLatencyReport"
   ]);
 
   gatewayUrlInput.value = settings.gatewayUrl || "";
@@ -94,6 +98,31 @@ async function initialize() {
   if (state?.detail) {
     showStatus(state.detail, state.status === "error");
   }
+
+  showLatencyReport(settings.lastLatencyReport);
+}
+
+async function loadLatencyReport() {
+  const { lastLatencyReport } =
+    await chrome.storage.local.get("lastLatencyReport");
+
+  showLatencyReport(lastLatencyReport);
+}
+
+function showLatencyReport(report) {
+  const displayMetric =
+    report?.metrics?.captureToDisplayMilliseconds;
+
+  if (!displayMetric || !Number.isFinite(displayMetric.p50)) {
+    latencySection.hidden = true;
+    return;
+  }
+
+  latencySummaryElement.textContent =
+    `P50 ${Math.round(displayMetric.p50)} ms · ` +
+    `P95 ${Math.round(displayMetric.p95)} ms · ` +
+    `${report.displayedCaptionCount} displayed captions`;
+  latencySection.hidden = false;
 }
 
 function setBusy(isBusy) {

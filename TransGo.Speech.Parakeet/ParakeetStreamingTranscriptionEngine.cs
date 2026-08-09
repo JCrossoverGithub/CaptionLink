@@ -346,10 +346,15 @@ public sealed class ParakeetStreamingTranscriptionEngine
                 root,
                 "result_start_time_seconds");
 
-                TimeSpan? resultEndTime =
-                    TryReadTimeSpanSeconds(
-                        root,
-                        "result_end_time_seconds");
+        TimeSpan? resultEndTime =
+            TryReadTimeSpanSeconds(
+                root,
+                "result_end_time_seconds");
+
+        double? processingMilliseconds =
+            TryReadNonNegativeDouble(
+                root,
+                "processing_duration_milliseconds");
 
         var result =
             new TranscriptResult(
@@ -362,6 +367,8 @@ public sealed class ParakeetStreamingTranscriptionEngine
             {
                 ResultStartTime =
                     resultStartTime,
+                ProviderProcessingMilliseconds =
+                    processingMilliseconds,
             };
 
         ResultReceived?.Invoke(
@@ -394,6 +401,24 @@ public sealed class ParakeetStreamingTranscriptionEngine
 
         return TimeSpan.FromSeconds(
             seconds);
+    }
+
+    private static double? TryReadNonNegativeDouble(
+        JsonElement root,
+        string propertyName)
+    {
+        if (!root.TryGetProperty(
+                propertyName,
+                out JsonElement valueElement) ||
+            valueElement.ValueKind != JsonValueKind.Number ||
+            !valueElement.TryGetDouble(out double value) ||
+            !double.IsFinite(value) ||
+            value < 0)
+        {
+            return null;
+        }
+
+        return value;
     }
 
     private static void ValidateConfiguration(

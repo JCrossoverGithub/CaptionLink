@@ -48,6 +48,13 @@ public sealed record StopSessionMessage(
     public string Type => RemoteMessageTypes.StopSession;
 }
 
+public sealed record CaptionLatencyMetrics(
+    long AudioChunkSequence,
+    long AudioEndTimeMilliseconds,
+    double GatewayReceiveToResultMilliseconds,
+    double GatewayDispatchToResultMilliseconds,
+    double? EngineProcessingMilliseconds);
+
 public sealed record CaptionMessage(
     string SessionId,
     long Sequence,
@@ -59,6 +66,8 @@ public sealed record CaptionMessage(
     DateTimeOffset EmittedAtUtc) : IRemoteProtocolMessage
 {
     public string Type => RemoteMessageTypes.Caption;
+
+    public CaptionLatencyMetrics? Latency { get; init; }
 }
 
 public sealed record SessionEndedMessage(

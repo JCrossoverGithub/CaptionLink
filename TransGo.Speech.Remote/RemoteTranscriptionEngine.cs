@@ -400,6 +400,8 @@ public sealed class RemoteTranscriptionEngine : ITranscriptionEngine
             ResultEndTime: endTime)
         {
             ResultStartTime = startTime,
+            ProviderProcessingMilliseconds =
+                caption.Latency?.EngineProcessingMilliseconds,
         };
 
         ResultReceived?.Invoke(

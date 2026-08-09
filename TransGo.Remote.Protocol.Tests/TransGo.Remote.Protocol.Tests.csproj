@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TransGo.GpuGateway\TransGo.GpuGateway.csproj" />
     <ProjectReference Include="..\TransGo.Remote.Protocol\TransGo.Remote.Protocol.csproj" />
   </ItemGroup>
 

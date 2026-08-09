@@ -16,6 +16,12 @@ public sealed record TranscriptResult(
     public TimeSpan? ResultStartTime { get; init; }
 
     /// <summary>
+    /// Time spent in the provider's transcription operation for the model
+    /// frame that produced this result. Providers may leave this null.
+    /// </summary>
+    public double? ProviderProcessingMilliseconds { get; init; }
+
+    /// <summary>
     /// Internal speaker identifier assigned by an optional
     /// diarization engine, such as "speaker-1".
     /// Null means that speaker attribution is unavailable or off.

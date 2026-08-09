@@ -7,6 +7,11 @@
 
   globalThis.__transGoOverlayLoaded = true;
 
+  const latency = globalThis.TransGoLatency;
+  const captionState = globalThis.TransGoCaptionState;
+
+  document.getElementById("transgo-caption-host")?.remove();
+
   const host = document.createElement("div");
   host.id = "transgo-caption-host";
   const shadow = host.attachShadow({ mode: "closed" });
@@ -72,9 +77,10 @@
 
   shadow.append(style, panel);
 
-  const interimRenderIntervalMilliseconds = 250;
+  const interimRenderIntervalMilliseconds = 400;
+  const state = captionState.createState();
   let latestCaption = null;
-  let lastSequence = -1;
+  let latestComposedText = "";
   let lastRenderedText = "";
   let interimRenderTimer = null;
 
@@ -96,7 +102,7 @@
   function renderCaptions() {
     interimRenderTimer = null;
 
-    const text = getReadableCaption(latestCaption?.text || "");
+    const text = getReadableCaption(latestComposedText);
 
     if (!text || text === lastRenderedText) {
       return;
@@ -108,23 +114,32 @@
       ? "panel visible"
       : "panel visible interim";
     mountHost();
+
+    const sample = latency?.createDisplaySample(
+      latestCaption,
+      latency.nowMilliseconds());
+
+    if (sample) {
+      console.debug("TransGo caption latency", sample);
+
+      void chrome.runtime.sendMessage({
+        target: "offscreen",
+        type: "latency_sample",
+        tabId: latestCaption.tabId,
+        sample
+      }).catch(() => undefined);
+    }
   }
 
   function addCaption(caption) {
-    const sequence = Number(caption.sequence);
+    const update = captionState.applyCaption(state, caption);
 
-    if (Number.isFinite(sequence)) {
-      if (sequence <= lastSequence) {
-        return;
-      }
-
-      lastSequence = sequence;
+    if (!update.accepted || !update.text) {
+      return;
     }
 
-    latestCaption = {
-      text: String(caption.text || "").trim(),
-      isFinal: Boolean(caption.isFinal)
-    };
+    latestCaption = { ...caption, isFinal: update.isFinal };
+    latestComposedText = update.text;
 
     if (latestCaption.isFinal) {
       if (interimRenderTimer !== null) {
@@ -185,8 +200,9 @@
     }
 
     latestCaption = null;
-    lastSequence = -1;
+    latestComposedText = "";
     lastRenderedText = "";
+    captionState.resetState(state);
   }
 
   function clear() {

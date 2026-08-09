@@ -49,6 +49,11 @@ async function handleMessage(message) {
         detail: message.detail
       });
       return {};
+    case "latency_report":
+      await chrome.storage.local.set({
+        lastLatencyReport: message.report
+      });
+      return {};
     default:
       throw new Error(`Unknown background message: ${message.type}`);
   }
@@ -71,13 +76,19 @@ async function startCapture(message) {
     throw new Error("Open an HTTP or HTTPS page before starting captions.");
   }
 
+  const previous = await chrome.storage.session.get("captureState");
+  const previousState = previous.captureState;
+
+  if (previousState?.tabId === tab.id &&
+      (previousState.status === "connecting" ||
+       previousState.status === "listening")) {
+    return { tabId: tab.id, alreadyRunning: true };
+  }
+
   await ensureContentScript(tab.id);
   await ensureOffscreenDocument();
 
-  const previous = await chrome.storage.session.get("captureState");
-
-  if (previous.captureState?.status &&
-      previous.captureState.status !== "stopped") {
+  if (previousState?.status && previousState.status !== "stopped") {
     await stopCapture("replaced");
   }
 
@@ -171,7 +182,7 @@ async function ensureContentScript(tabId) {
   } catch {
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ["content.js"]
+      files: ["latency.js", "caption-state.js", "content.js"]
     });
   }
 }

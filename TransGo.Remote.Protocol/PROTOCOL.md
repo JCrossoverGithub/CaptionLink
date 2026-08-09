@@ -39,6 +39,36 @@ The client must convert captured audio into this format before transmitting it.
 
 Audio must not be sent before `session_started`.
 
+## Caption timing
+
+Caption messages may include an additive `latency` object:
+
+```json
+{
+  "type": "caption",
+  "sessionId": "4d4a...",
+  "sequence": 7,
+  "segmentId": "parakeet-000002",
+  "text": "Latency is measured.",
+  "isFinal": false,
+  "startTimeMilliseconds": 1000,
+  "endTimeMilliseconds": 1500,
+  "emittedAtUtc": "2026-08-09T15:00:00Z",
+  "latency": {
+    "audioChunkSequence": 14,
+    "audioEndTimeMilliseconds": 1500,
+    "gatewayReceiveToResultMilliseconds": 425.5,
+    "gatewayDispatchToResultMilliseconds": 420.0,
+    "engineProcessingMilliseconds": 97.25
+  }
+}
+```
+
+All latency values are durations measured with monotonic clocks on one device
+or process. `emittedAtUtc` is diagnostic metadata and must not be subtracted
+from a client timestamp to calculate latency unless the clocks have been
+independently synchronized.
+
 ## Control messages
 
 ### `start_session`

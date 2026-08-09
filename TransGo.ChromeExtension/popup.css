@@ -116,6 +116,32 @@ button:disabled {
   color: #ffb6b6;
 }
 
+.latency {
+  margin-top: 12px;
+  padding: 10px 11px;
+  border: 1px solid #303849;
+  border-radius: 8px;
+  background: #171c25;
+}
+
+.latency h2,
+.latency p {
+  margin: 0;
+}
+
+.latency h2 {
+  color: #aeb7c8;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.latency p {
+  margin-top: 4px;
+  color: #eef3ff;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .note {
   margin: 8px 0 0;
   color: #8893a6;

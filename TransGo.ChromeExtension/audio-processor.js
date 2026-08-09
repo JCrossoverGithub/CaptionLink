@@ -81,7 +81,8 @@ class TransGoPcmProcessor extends AudioWorkletProcessor {
 
     this.port.postMessage({
       pcm,
-      timestampMilliseconds
+      timestampMilliseconds,
+      audioContextTimeMilliseconds: currentTime * 1000
     }, [pcm]);
   }
 }

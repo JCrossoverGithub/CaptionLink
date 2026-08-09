@@ -1,4 +1,5 @@
-﻿using System.Net.WebSockets;
+﻿using System.Diagnostics;
+using System.Net.WebSockets;
 using System.Text.Json;
 using System.Threading.Channels;
 using TransGo.Core.Audio;
@@ -107,6 +108,9 @@ internal static class TranscriptionWebSocketSession
 
             long captionSequence = -1;
 
+            var latencyTracker =
+                new GatewayLatencyTracker();
+
             engine =
                 new ParakeetStreamingTranscriptionEngine();
 
@@ -126,6 +130,12 @@ internal static class TranscriptionWebSocketSession
                                 result.ResultEndTime)
                             : startMilliseconds;
 
+                    CaptionLatencyMetrics? latency =
+                        latencyTracker.CreateCaptionMetrics(
+                            endMilliseconds,
+                            result.ProviderProcessingMilliseconds,
+                            Stopwatch.GetTimestamp());
+
                     outbound.Writer.TryWrite(
                         new CaptionMessage(
                             SessionId: sessionId,
@@ -140,7 +150,10 @@ internal static class TranscriptionWebSocketSession
                             EndTimeMilliseconds:
                                 endMilliseconds,
                             EmittedAtUtc:
-                                DateTimeOffset.UtcNow));
+                                DateTimeOffset.UtcNow)
+                        {
+                            Latency = latency
+                        });
                 };
 
             engine.ResultReceived += resultHandler;
@@ -242,6 +255,9 @@ internal static class TranscriptionWebSocketSession
                     AudioChunkCodec.Decode(
                         message.Payload);
 
+                long gatewayReceivedTimestamp =
+                    Stopwatch.GetTimestamp();
+
                 if (remoteChunk.Sequence !=
                     expectedAudioSequence)
                 {
@@ -272,6 +288,16 @@ internal static class TranscriptionWebSocketSession
                                 remoteChunk
                                     .CaptureTimestampMilliseconds)
                     };
+
+                latencyTracker.RecordReceived(
+                    remoteChunk.Sequence,
+                    remoteChunk.CaptureTimestampMilliseconds,
+                    ToMilliseconds(audioChunk.Duration),
+                    gatewayReceivedTimestamp);
+
+                latencyTracker.RecordDispatchStarted(
+                    remoteChunk.Sequence,
+                    Stopwatch.GetTimestamp());
 
                 await engine.SendAsync(
                     audioChunk,

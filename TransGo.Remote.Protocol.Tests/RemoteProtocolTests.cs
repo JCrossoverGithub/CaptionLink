@@ -87,6 +87,34 @@ public sealed class RemoteProtocolTests
     }
 
     [Fact]
+    public void CaptionLatencyJson_RoundTrips()
+    {
+        var original = new CaptionMessage(
+            SessionId: "session-1",
+            Sequence: 7,
+            SegmentId: "segment-2",
+            Text: "Latency is measured.",
+            IsFinal: false,
+            StartTimeMilliseconds: 1000,
+            EndTimeMilliseconds: 1500,
+            EmittedAtUtc: DateTimeOffset.UtcNow)
+        {
+            Latency = new CaptionLatencyMetrics(
+                AudioChunkSequence: 14,
+                AudioEndTimeMilliseconds: 1500,
+                GatewayReceiveToResultMilliseconds: 425.5,
+                GatewayDispatchToResultMilliseconds: 420.0,
+                EngineProcessingMilliseconds: 97.25)
+        };
+
+        byte[] json = ProtocolJson.Serialize(original);
+        CaptionMessage restored =
+            ProtocolJson.Deserialize<CaptionMessage>(json);
+
+        Assert.Equal(original.Latency, restored.Latency);
+    }
+
+    [Fact]
     public void StartSessionValidation_AcceptsRequiredFormat()
     {
         ProtocolValidationResult result =

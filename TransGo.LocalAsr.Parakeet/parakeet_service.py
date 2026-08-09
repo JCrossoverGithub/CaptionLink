@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from functools import partial
@@ -259,6 +260,7 @@ async def stream_audio(websocket: WebSocket) -> None:
 
     async def publish_pipeline_result(
         result: ParakeetPipelineResult,
+        processing_duration_milliseconds: float,
     ) -> None:
         nonlocal result_sequence
         nonlocal segment_number
@@ -306,6 +308,10 @@ async def stream_audio(websocket: WebSocket) -> None:
                         result_end_seconds,
                         3,
                     ),
+                    "processing_duration_milliseconds": round(
+                        processing_duration_milliseconds,
+                        3,
+                    ),
                 }
             )
 
@@ -343,6 +349,10 @@ async def stream_audio(websocket: WebSocket) -> None:
                         result_end_seconds,
                         3,
                     ),
+                    "processing_duration_milliseconds": round(
+                        processing_duration_milliseconds,
+                        3,
+                    ),
                 }
             )
 
@@ -355,13 +365,22 @@ async def stream_audio(websocket: WebSocket) -> None:
         *,
         is_last: bool,
     ) -> None:
+        processing_started = time.perf_counter()
+
         result = await run_session_method(
             streaming_session.transcribe,
             frame,
             is_last=is_last,
         )
 
-        await publish_pipeline_result(result)
+        processing_duration_milliseconds = (
+            time.perf_counter() - processing_started
+        ) * 1000.0
+
+        await publish_pipeline_result(
+            result,
+            processing_duration_milliseconds,
+        )
 
     fatal_cuda_error = False
 

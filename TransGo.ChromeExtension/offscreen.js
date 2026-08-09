@@ -1,12 +1,20 @@
 "use strict";
 
 const protocol = globalThis.TransGoProtocol;
+const latency = globalThis.TransGoLatency;
+const sessionStartTimeoutMilliseconds = 120000;
 
 let capture = null;
 let operation = Promise.resolve();
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.target !== "offscreen") {
+    return false;
+  }
+
+  if (message.type === "latency_sample") {
+    recordDisplayLatency(message);
+    sendResponse({ ok: true });
     return false;
   }
 
@@ -51,6 +59,11 @@ async function startCapture({ tabId, streamId, gatewayUrl, token }) {
     sessionId: null,
     requestId: crypto.randomUUID().replaceAll("-", ""),
     sequence: 0,
+    firstSentChunkTimestampMilliseconds: null,
+    audioTimings: new Map(),
+    receivedLatencySamples: [],
+    displayLatencySamples: [],
+    startError: null,
     stopping: false,
     sessionEnded: null,
     resolveSessionEnded: null
@@ -131,12 +144,19 @@ async function startCapture({ tabId, streamId, gatewayUrl, token }) {
         const detail = event.reason
           ? `Gateway disconnected: ${event.reason}`
           : "The GPU gateway disconnected.";
+        if (!session.sessionId) {
+          session.startError = new Error(detail);
+        }
         notifyStatus(session, "error", detail);
       }
     });
 
     session.socket.addEventListener("error", () => {
       if (!session.stopping && capture === session) {
+        if (!session.sessionId) {
+          session.startError = new Error(
+            "Could not connect to the GPU gateway. Check Tailscale, the URL, and the token.");
+        }
         notifyStatus(
           session,
           "error",
@@ -153,7 +173,14 @@ async function startCapture({ tabId, streamId, gatewayUrl, token }) {
     session.socket.send(JSON.stringify(
       protocol.createStartSessionMessage(session.requestId)));
 
-    await waitForSessionStarted(session, 15000);
+    await notifyStatus(
+      session,
+      "connecting",
+      "Starting Parakeet on the GPU…");
+
+    await waitForSessionStarted(
+      session,
+      sessionStartTimeoutMilliseconds);
   } catch (error) {
     await notifyStatus(
       session,
@@ -173,9 +200,45 @@ function sendAudioChunk(session, chunk) {
   }
 
   try {
+    const sequence = session.sequence;
+    const sourceTimestampMilliseconds =
+      Number(chunk.timestampMilliseconds);
+
+    if (!Number.isFinite(sourceTimestampMilliseconds) ||
+        sourceTimestampMilliseconds < 0) {
+      throw new Error("The audio worklet returned an invalid timestamp.");
+    }
+
+    if (session.firstSentChunkTimestampMilliseconds === null) {
+      session.firstSentChunkTimestampMilliseconds =
+        sourceTimestampMilliseconds;
+    }
+
+    const sessionTimestampMilliseconds = Math.max(
+      0,
+      sourceTimestampMilliseconds -
+        session.firstSentChunkTimestampMilliseconds);
+    const durationMilliseconds =
+      chunk.pcm.byteLength * 1000 /
+      (16000 * 2);
+
+    session.audioTimings.set(sequence, {
+      sequence,
+      startTimeMilliseconds: sessionTimestampMilliseconds,
+      endTimeMilliseconds:
+        sessionTimestampMilliseconds + durationMilliseconds,
+      captureCompletedAtMilliseconds:
+        resolveCaptureCompletedAt(session, chunk)
+    });
+
+    if (session.audioTimings.size > 1200) {
+      const oldestSequence = session.audioTimings.keys().next().value;
+      session.audioTimings.delete(oldestSequence);
+    }
+
     const packet = protocol.createAudioPacket(
-      session.sequence,
-      chunk.timestampMilliseconds,
+      sequence,
+      sessionTimestampMilliseconds,
       chunk.pcm);
 
     session.sequence += 1;
@@ -186,6 +249,25 @@ function sendAudioChunk(session, chunk) {
       "error",
       error instanceof Error ? error.message : String(error));
   }
+}
+
+function resolveCaptureCompletedAt(session, chunk) {
+  const now = latency.nowMilliseconds();
+  const workletContextTime =
+    Number(chunk.audioContextTimeMilliseconds);
+  const offscreenContextTime =
+    Number(session.audioContext?.currentTime) * 1000;
+
+  if (!Number.isFinite(workletContextTime) ||
+      !Number.isFinite(offscreenContextTime)) {
+    return now;
+  }
+
+  const deliveryDelay = Math.max(
+    0,
+    offscreenContextTime - workletContextTime);
+
+  return now - deliveryDelay;
 }
 
 function handleGatewayMessage(session, data) {
@@ -215,10 +297,26 @@ function handleGatewayMessage(session, data) {
       break;
     case "caption":
       if (message.sessionId === session.sessionId) {
+        const receivedAtMilliseconds =
+          latency.nowMilliseconds();
+        const audioTiming = findAudioTiming(session, message);
+        const caption = latency.decorateReceivedCaption(
+          {
+            ...message,
+            tabId: session.tabId
+          },
+          audioTiming,
+          receivedAtMilliseconds);
+
+        pushBounded(session.receivedLatencySamples, {
+          ...caption.clientLatency,
+          isFinal: Boolean(caption.isFinal)
+        });
+
         sendToBackground({
           type: "caption",
           tabId: session.tabId,
-          caption: message
+          caption
         });
       }
       break;
@@ -228,10 +326,17 @@ function handleGatewayMessage(session, data) {
       }
       break;
     case "error":
-      notifyStatus(
-        session,
-        "error",
-        `Gateway error [${message.code || "unknown"}]: ${message.message || "Unknown error"}`);
+      {
+        const detail =
+          `Gateway error [${message.code || "unknown"}]: ` +
+          `${message.message || "Unknown error"}`;
+
+        if (message.isFatal && !session.sessionId) {
+          session.startError = new Error(detail);
+        }
+
+        notifyStatus(session, "error", detail);
+      }
       if (message.isFatal) {
         session.resolveSessionEnded?.(message);
       }
@@ -244,12 +349,60 @@ function handleGatewayMessage(session, data) {
   }
 }
 
+function findAudioTiming(session, caption) {
+  const sequence = Number(caption.latency?.audioChunkSequence);
+
+  if (Number.isFinite(sequence) && session.audioTimings.has(sequence)) {
+    return session.audioTimings.get(sequence);
+  }
+
+  const targetEnd = Number(caption.endTimeMilliseconds);
+  let nearest = null;
+
+  for (const timing of session.audioTimings.values()) {
+    if (!Number.isFinite(targetEnd)) {
+      nearest = timing;
+      continue;
+    }
+
+    if (timing.endTimeMilliseconds <= targetEnd) {
+      nearest = timing;
+    }
+  }
+
+  return nearest;
+}
+
+function recordDisplayLatency(message) {
+  const session = capture;
+
+  if (!session ||
+      session.tabId !== message.tabId ||
+      message.sample?.sessionId !== session.sessionId) {
+    return;
+  }
+
+  pushBounded(session.displayLatencySamples, message.sample);
+}
+
+function pushBounded(samples, sample, maximumCount = 5000) {
+  samples.push(sample);
+
+  if (samples.length > maximumCount) {
+    samples.splice(0, samples.length - maximumCount);
+  }
+}
+
 async function waitForSessionStarted(session, timeoutMilliseconds) {
   const deadline = Date.now() + timeoutMilliseconds;
 
   while (!session.sessionId) {
     if (capture !== session || session.stopping) {
       throw new Error("Tab capture stopped while the gateway was starting.");
+    }
+
+    if (session.startError) {
+      throw session.startError;
     }
 
     if (Date.now() >= deadline) {
@@ -323,8 +476,33 @@ async function stopCapture(reason) {
     ]);
   }
 
+  await new Promise((resolve) => setTimeout(resolve, 300));
+
+  await publishLatencyReport(session);
+
   await disposeSession(session);
   await notifyStatus(session, "stopped", "Captions stopped.");
+}
+
+async function publishLatencyReport(session) {
+  if (!session.sessionId ||
+      (session.receivedLatencySamples.length === 0 &&
+       session.displayLatencySamples.length === 0)) {
+    return;
+  }
+
+  const report = latency.summarizeSession(
+    session.sessionId,
+    session.receivedLatencySamples,
+    session.displayLatencySamples);
+
+  console.info("TransGo latency report", report);
+
+  await sendToBackground({
+    type: "latency_report",
+    tabId: session.tabId,
+    report
+  }).catch(() => undefined);
 }
 
 async function disposeSession(session) {
