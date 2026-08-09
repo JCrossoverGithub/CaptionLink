@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\TransGo.Remote.Protocol\TransGo.Remote.Protocol.csproj" />
+    <ProjectReference Include="..\TransGo.Speech.Parakeet\TransGo.Speech.Parakeet.csproj" />
+    <ProjectReference Include="..\TransGo.Core\TransGo.Core.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

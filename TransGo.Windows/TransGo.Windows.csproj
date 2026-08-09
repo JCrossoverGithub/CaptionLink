@@ -14,6 +14,7 @@
     <ProjectReference Include="..\TransGo.Audio.Windows\TransGo.Audio.Windows.csproj" />
     <ProjectReference Include="..\TransGo.Speech.Google\TransGo.Speech.Google.csproj" />
     <ProjectReference Include="..\TransGo.Speech.Parakeet\TransGo.Speech.Parakeet.csproj" />
+    <ProjectReference Include="..\TransGo.Speech.Remote\TransGo.Speech.Remote.csproj" />
     <ProjectReference Include="..\TransGo.Speech.Sherpa\TransGo.Speech.Sherpa.csproj" />
     <ProjectReference Include="..\TransGo.Diarization.Simulated\TransGo.Diarization.Simulated.csproj" />
     <ProjectReference Include="..\TransGo.Diarization.Sortformer\TransGo.Diarization.Sortformer.csproj" />
