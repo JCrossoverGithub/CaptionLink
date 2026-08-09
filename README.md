@@ -16,3 +16,7 @@ TransGo Desktop is a Windows application that captures desktop output audio and 
 - Finalized transcript history
 - Session recovery and reconnection
 - Windows and macOS clients
+
+## Overlap benchmark
+
+The [VoxConverse benchmark guide](docs/overlap-benchmark.md) explains how to measure the production Sortformer overlap path against v0.3 reference annotations without committing the dataset or generated results.

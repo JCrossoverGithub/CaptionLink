@@ -184,8 +184,13 @@ class SortformerStreamingSession:
             )
         )
 
+        # Flush windows are padded with silence to the normal model
+        # window size. Treat that padding as model context so NeMo
+        # produces the requested prediction frames; only
+        # requested_frame_count frames are published below, so the
+        # padded tail never extends the session timeline.
         audio_length = torch.tensor(
-            [window.valid_length],
+            [window.samples.size],
             dtype=torch.long,
             device=self._model.device,
         )

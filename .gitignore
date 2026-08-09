@@ -494,3 +494,9 @@ TransGo.Benchmarks/results/raw/
 TransGo.Benchmarks/.venv/
 
 TransGo.LocalDiarization.Sortformer/diagnostics/
+
+# VoxConverse overlap benchmark inputs and generated reports
+benchmark-data/
+benchmark-results/
+benchmark-traces/
+.benchmark-downloads/

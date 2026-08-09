@@ -81,6 +81,7 @@ internal sealed class SortformerServiceClient
     public async Task ConnectAsync(
         int sampleRate,
         int maximumSpeakers,
+        bool publishSpeakerProbabilities,
         CancellationToken cancellationToken = default)
     {
         ValidateStartConfiguration(
@@ -127,6 +128,8 @@ internal sealed class SortformerServiceClient
                         bits_per_sample = 16,
                         maximum_speakers =
                             maximumSpeakers,
+                        publish_speaker_probabilities =
+                            publishSpeakerProbabilities,
                     });
 
             await SendTextAsync(
@@ -355,6 +358,24 @@ internal sealed class SortformerServiceClient
                     message.MessageType ==
                         WebSocketMessageType.Close)
                 {
+                    if (!stoppedReceived)
+                    {
+                        string closeDetail =
+                            string.IsNullOrWhiteSpace(
+                                message.CloseStatusDescription)
+                                ? message.CloseStatus is null
+                                    ? "without a close status"
+                                    : $"with close status " +
+                                      $"{message.CloseStatus}"
+                                : message.CloseStatusDescription;
+
+                        stoppedCompletion.TrySetException(
+                            new InvalidOperationException(
+                                "The Sortformer service closed " +
+                                "before reporting that it stopped: " +
+                                closeDetail));
+                    }
+
                     break;
                 }
 
@@ -556,7 +577,9 @@ internal sealed class SortformerServiceClient
             {
                 return new ReceivedMessage(
                     WebSocketMessageType.Close,
-                    null);
+                    null,
+                    result.CloseStatus,
+                    result.CloseStatusDescription);
             }
 
             if (
@@ -588,7 +611,9 @@ internal sealed class SortformerServiceClient
 
         return new ReceivedMessage(
             messageType.Value,
-            text);
+            text,
+            null,
+            null);
     }
 
     private static void EnsureMessageType(
@@ -743,5 +768,7 @@ internal sealed class SortformerServiceClient
 
     private sealed record ReceivedMessage(
         WebSocketMessageType MessageType,
-        string? Text);
+        string? Text,
+        WebSocketCloseStatus? CloseStatus,
+        string? CloseStatusDescription);
 }

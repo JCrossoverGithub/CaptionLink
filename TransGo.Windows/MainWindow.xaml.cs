@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -46,6 +47,15 @@ public partial class MainWindow : Window
     string,
     SpeakerActivity> _speakerActivities = new();
 
+    private readonly SpeakerOverlapDetector
+        _overlapDetector = new();
+
+    private readonly Pcm16AudioRingBuffer
+        _overlapAudioBuffer =
+            new(
+                sampleRate: 16_000,
+                capacity: TimeSpan.FromSeconds(30));
+
     private int _diarizationFailureHandled;
 
     public MainWindow()
@@ -75,6 +85,9 @@ public partial class MainWindow : Window
 
         _audioNormalizer.ChunkAvailable +=
             AudioNormalizer_ChunkAvailable;
+
+        _overlapDetector.RegionUpdated +=
+            OverlapDetector_RegionUpdated;
 
         LoadOutputDevices();
     }
@@ -488,6 +501,9 @@ public partial class MainWindow : Window
 
             _speakerActivities.Clear();
 
+            _overlapDetector.Reset();
+            _overlapAudioBuffer.Reset();
+
             Interlocked.Exchange(
                 ref _diarizationFailureHandled,
                 0);
@@ -689,6 +705,22 @@ public partial class MainWindow : Window
                 $"{chunk.Duration.TotalMilliseconds:0} ms";
         }));
 
+        try
+        {
+            _overlapAudioBuffer.Append(
+                chunk);
+        }
+        catch (Exception exception)
+        {
+            /*
+             * Overlap buffering is diagnostic in this milestone.
+             * It must never interrupt ordinary captions.
+             */
+            Debug.WriteLine(
+                "Buffering overlap audio failed: " +
+                exception);
+        }
+
         ITranscriptionEngine? engine =
             _transcriptionEngine;
 
@@ -888,6 +920,22 @@ public partial class MainWindow : Window
                     ? activity
                     : existingActivity);
 
+        try
+        {
+            _overlapDetector.Process(
+                activity);
+        }
+        catch (Exception exception)
+        {
+            /*
+             * Detection is intentionally isolated from speaker
+             * attribution and visible caption rendering.
+             */
+            Debug.WriteLine(
+                "Processing speaker overlap failed: " +
+                exception);
+        }
+
         if (activity.IsFinal)
         {
             Debug.WriteLine(
@@ -896,6 +944,80 @@ public partial class MainWindow : Window
                 $"{activity.StartTime.TotalSeconds:0.0}s–" +
                 $"{activity.EndTime.TotalSeconds:0.0}s");
         }
+    }
+
+    private void OverlapDetector_RegionUpdated(
+        object? sender,
+        OverlapRegionEventArgs e)
+    {
+        OverlapRegion region =
+            e.Region;
+
+        bool audioWindowAvailable = false;
+        int audioWindowBytes = 0;
+
+        if (
+            region.IsFinal
+            &&
+            _overlapAudioBuffer.TryRead(
+                region.AudioStartTime,
+                region.AudioEndTime,
+                out Pcm16AudioWindow? audioWindow))
+        {
+            audioWindowAvailable = true;
+            audioWindowBytes =
+                audioWindow!.Data.Length;
+        }
+
+        string diagnosticJson =
+            JsonSerializer.Serialize(
+                new
+                {
+                    event_name =
+                        "overlap_region",
+
+                    region_id =
+                        region.RegionId,
+
+                    revision =
+                        region.Revision,
+
+                    start_seconds =
+                        region.StartTime.TotalSeconds,
+
+                    end_seconds =
+                        region.EndTime.TotalSeconds,
+
+                    overlap_seconds =
+                        region.OverlapDuration.TotalSeconds,
+
+                    speaker_ids =
+                        region.ActiveSpeakerIds,
+
+                    confidence =
+                        region.DetectionConfidence,
+
+                    is_final =
+                        region.IsFinal,
+
+                    speaker_limit_exceeded =
+                        region.ExceedsSupportedSpeakerCount,
+
+                    audio_start_seconds =
+                        region.AudioStartTime.TotalSeconds,
+
+                    audio_end_seconds =
+                        region.AudioEndTime.TotalSeconds,
+
+                    audio_window_available =
+                        audioWindowAvailable,
+
+                    audio_window_bytes =
+                        audioWindowBytes,
+                });
+
+        Debug.WriteLine(
+            diagnosticJson);
     }
 
     private void TranscriptionEngine_ResultReceived(
@@ -1231,8 +1353,81 @@ public partial class MainWindow : Window
             engine.ActivityReceived -=
                 DiarizationEngine_ActivityReceived;
 
-            await engine.DisposeAsync();
+            try
+            {
+                await engine.DisposeAsync();
+            }
+            finally
+            {
+                CompleteOverlapDetection();
+            }
         }
+    }
+
+    private void CompleteOverlapDetection()
+    {
+        TimeSpan sessionEndTime =
+            _overlapAudioBuffer
+                .AvailableEndTime
+            ?? TimeSpan.Zero;
+
+        _overlapDetector.Complete(
+            sessionEndTime);
+
+        OverlapDetectionMetrics detectionMetrics =
+            _overlapDetector.GetMetrics();
+
+        Pcm16AudioRingBufferMetrics bufferMetrics =
+            _overlapAudioBuffer.GetMetrics();
+
+        string summaryJson =
+            JsonSerializer.Serialize(
+                new
+                {
+                    event_name =
+                        "overlap_session_summary",
+
+                    activity_updates =
+                        detectionMetrics
+                            .ActivityUpdatesReceived,
+
+                    stale_activity_updates =
+                        detectionMetrics
+                            .StaleActivityUpdatesIgnored,
+
+                    regions_started =
+                        detectionMetrics
+                            .RegionsStarted,
+
+                    regions_finalized =
+                        detectionMetrics
+                            .RegionsFinalized,
+
+                    unsupported_regions =
+                        detectionMetrics
+                            .UnsupportedSpeakerRegions,
+
+                    final_overlap_seconds =
+                        detectionMetrics
+                            .TotalFinalOverlapDuration
+                            .TotalSeconds,
+
+                    buffered_seconds =
+                        bufferMetrics
+                            .StoredDuration
+                            .TotalSeconds,
+
+                    buffer_discontinuities =
+                        bufferMetrics
+                            .Discontinuities,
+
+                    overwritten_audio_bytes =
+                        bufferMetrics
+                            .OverwrittenOutputBytes,
+                });
+
+        Debug.WriteLine(
+            summaryJson);
     }
 
     private async Task
@@ -1338,6 +1533,8 @@ public partial class MainWindow : Window
                 "Transcription or speaker attribution " +
                 $"cleanup failed: {exception}");
         }
+
+        _overlapDetector.RegionUpdated -=
+            OverlapDetector_RegionUpdated;
     }
 }
-

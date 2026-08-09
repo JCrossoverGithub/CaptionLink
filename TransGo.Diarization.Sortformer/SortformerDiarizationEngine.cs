@@ -27,6 +27,19 @@ public sealed class SortformerDiarizationEngine
     public event EventHandler<SpeakerActivityEventArgs>?
         ActivityReceived;
 
+    public event EventHandler<
+        SortformerAudioProgressEventArgs>?
+            AudioProgressReceived;
+
+    /// <summary>
+    /// Publishes raw model probabilities only when the session was
+    /// started with PublishSpeakerProbabilities enabled. Production
+    /// sessions leave this disabled to avoid serialization overhead.
+    /// </summary>
+    public event EventHandler<
+        SortformerProbabilityBatchEventArgs>?
+            ProbabilityBatchReceived;
+
     public bool IsRunning
     {
         get
@@ -77,6 +90,7 @@ public sealed class SortformerDiarizationEngine
             await client.ConnectAsync(
                 configuration.SampleRate,
                 configuration.MaximumSpeakers,
+                configuration.PublishSpeakerProbabilities,
                 cancellationToken);
 
             lock (_gate)
@@ -203,6 +217,26 @@ public sealed class SortformerDiarizationEngine
             if (activity is not null)
             {
                 PublishActivity(activity);
+                return;
+            }
+
+            SortformerProbabilityBatch? probabilityBatch =
+                TryParseProbabilityBatch(e.Json);
+
+            if (probabilityBatch is not null)
+            {
+                PublishProbabilityBatch(probabilityBatch);
+                return;
+            }
+
+            long? chunksReceived =
+                TryParseAudioProgress(
+                    e.Json);
+
+            if (chunksReceived is not null)
+            {
+                PublishAudioProgress(
+                    chunksReceived.Value);
             }
         }
         catch (Exception exception)
@@ -371,6 +405,219 @@ public sealed class SortformerDiarizationEngine
             {
                 Debug.WriteLine(
                     "A Sortformer diarization event " +
+                    $"handler failed: {exception}");
+            }
+        }
+    }
+
+    private static long? TryParseAudioProgress(
+        string json)
+    {
+        using JsonDocument document =
+            JsonDocument.Parse(json);
+
+        JsonElement root =
+            document.RootElement;
+
+        if (
+            !root.TryGetProperty(
+                "type",
+                out JsonElement typeElement)
+            ||
+            typeElement.ValueKind !=
+                JsonValueKind.String
+            ||
+            !string.Equals(
+                typeElement.GetString(),
+                "audio_received",
+                StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        long chunksReceived =
+            GetRequiredInt64(
+                root,
+                "chunks_received");
+
+        if (chunksReceived <= 0)
+        {
+            throw new InvalidOperationException(
+                "The Sortformer processed chunk count " +
+                "must be positive.");
+        }
+
+        return chunksReceived;
+    }
+
+    private static SortformerProbabilityBatch?
+        TryParseProbabilityBatch(string json)
+    {
+        using JsonDocument document =
+            JsonDocument.Parse(json);
+
+        JsonElement root = document.RootElement;
+
+        if (
+            !root.TryGetProperty("type", out JsonElement typeElement) ||
+            typeElement.ValueKind != JsonValueKind.String ||
+            !string.Equals(
+                typeElement.GetString(),
+                "speaker_probabilities",
+                StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        long startFrameIndex =
+            GetRequiredInt64(root, "start_frame_index");
+
+        double frameDurationSeconds =
+            GetRequiredDouble(root, "frame_duration_seconds");
+
+        if (startFrameIndex < 0)
+        {
+            throw new InvalidOperationException(
+                "The Sortformer probability frame index is invalid.");
+        }
+
+        if (
+            !double.IsFinite(frameDurationSeconds) ||
+            frameDurationSeconds <= 0)
+        {
+            throw new InvalidOperationException(
+                "The Sortformer probability frame duration is invalid.");
+        }
+
+        if (
+            !root.TryGetProperty(
+                "probabilities",
+                out JsonElement probabilitiesElement) ||
+            probabilitiesElement.ValueKind != JsonValueKind.Array)
+        {
+            throw new InvalidOperationException(
+                "The Sortformer probability matrix is missing.");
+        }
+
+        var frames =
+            new List<float[]>();
+
+        int? speakerCount = null;
+
+        foreach (JsonElement frameElement in
+            probabilitiesElement.EnumerateArray())
+        {
+            if (frameElement.ValueKind != JsonValueKind.Array)
+            {
+                throw new InvalidOperationException(
+                    "A Sortformer probability frame is invalid.");
+            }
+
+            float[] frame = frameElement
+                .EnumerateArray()
+                .Select(value => value.GetSingle())
+                .ToArray();
+
+            if (frame.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    "A Sortformer probability frame is empty.");
+            }
+
+            if (speakerCount is not null &&
+                speakerCount.Value != frame.Length)
+            {
+                throw new InvalidOperationException(
+                    "Sortformer probability frames have different speaker counts.");
+            }
+
+            if (frame.Any(value =>
+                    !float.IsFinite(value) ||
+                    value < 0 ||
+                    value > 1))
+            {
+                throw new InvalidOperationException(
+                    "A Sortformer speaker probability is invalid.");
+            }
+
+            speakerCount = frame.Length;
+            frames.Add(frame);
+        }
+
+        if (frames.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "The Sortformer probability batch is empty.");
+        }
+
+        return new SortformerProbabilityBatch(
+            startFrameIndex,
+            frameDurationSeconds,
+            frames);
+    }
+
+    private void PublishProbabilityBatch(
+        SortformerProbabilityBatch batch)
+    {
+        EventHandler<SortformerProbabilityBatchEventArgs>?
+            handlers = ProbabilityBatchReceived;
+
+        if (handlers is null)
+        {
+            return;
+        }
+
+        var eventArgs =
+            new SortformerProbabilityBatchEventArgs(batch);
+
+        foreach (
+            EventHandler<SortformerProbabilityBatchEventArgs> handler
+            in handlers.GetInvocationList())
+        {
+            try
+            {
+                handler(this, eventArgs);
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine(
+                    "A Sortformer probability event handler failed: " +
+                    exception);
+            }
+        }
+    }
+
+    private void PublishAudioProgress(
+        long chunksReceived)
+    {
+        EventHandler<SortformerAudioProgressEventArgs>?
+            handlers =
+                AudioProgressReceived;
+
+        if (handlers is null)
+        {
+            return;
+        }
+
+        var eventArgs =
+            new SortformerAudioProgressEventArgs(
+                chunksReceived);
+
+        foreach (
+            EventHandler<SortformerAudioProgressEventArgs>
+                handler
+            in handlers.GetInvocationList())
+        {
+            try
+            {
+                handler(
+                    this,
+                    eventArgs);
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine(
+                    "A Sortformer audio-progress event " +
                     $"handler failed: {exception}");
             }
         }
