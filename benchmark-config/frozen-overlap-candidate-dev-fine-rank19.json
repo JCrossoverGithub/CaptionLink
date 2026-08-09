@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "candidate_id": "voxconverse-dev-fine-v1-rank-19",
+  "selection_source": "VoxConverse v0.3 development split, 216 recordings, cached Sortformer fine sweep; selected for recall margin and short-overlap performance rather than maximum development-set F1",
+  "frozen_at_utc": "2026-08-08T23:14:39Z",
+  "configuration": {
+    "start_threshold": 0.51,
+    "stop_threshold": 0.37,
+    "consecutive_start_frames": 1,
+    "minimum_overlap_ms": 80,
+    "start_hysteresis_ms": 80,
+    "end_hysteresis_ms": 640,
+    "merge_gap_ms": 200
+  },
+  "selection_metrics": {
+    "source_rank": 19,
+    "evaluated_configurations": 4321,
+    "strict_precision": 0.718777,
+    "strict_recall": 0.688649,
+    "strict_f1": 0.703391,
+    "practical_f1": 0.726363,
+    "under_0_5s_recall": 0.622660,
+    "p95_finalization_latency_ms": 1200,
+    "false_overlap_seconds_per_hour": 33.793412,
+    "missed_overlap_seconds_per_hour": 39.050612
+  },
+  "acceptance": {
+    "minimum_strict_f1": 0.70,
+    "minimum_strict_precision": 0.68,
+    "minimum_strict_recall": 0.68,
+    "maximum_under_0_5s_recall_drop": 0.005,
+    "maximum_p95_finalization_latency_ms": 1360,
+    "require_strict_f1_improvement_over_baseline": true
+  }
+}

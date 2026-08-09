@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from functools import partial
@@ -294,6 +295,7 @@ async def stream_audio(
     probability_batch_count = 0
     prediction_frame_count = 0
     activity_message_count = 0
+    publish_speaker_probabilities = False
 
     audio_preprocessor: (
         StreamingSortformerAudioPreprocessor
@@ -368,6 +370,23 @@ async def stream_audio(
             batch.frame_count
         )
 
+        if publish_speaker_probabilities:
+            await websocket.send_json(
+                {
+                    "type": "speaker_probabilities",
+                    "start_frame_index": (
+                        batch.start_frame_index
+                    ),
+                    "frame_count": batch.frame_count,
+                    "frame_duration_seconds": (
+                        PREDICTION_FRAME_DURATION_SECONDS
+                    ),
+                    "probabilities": (
+                        batch.probabilities.tolist()
+                    ),
+                }
+            )
+
         updates = activity_tracker.consume(
             batch
         )
@@ -430,6 +449,12 @@ async def stream_audio(
                 )
 
                 if command_type == "start":
+                    publish_speaker_probabilities = bool(
+                        command.get(
+                            "publish_speaker_probabilities",
+                            False,
+                        )
+                    )
                     if session_started:
                         await websocket.send_json(
                             {
@@ -584,6 +609,9 @@ async def stream_audio(
                             ),
                             "speaker_activity_start_threshold": 0.50,
                             "speaker_activity_stop_threshold": 0.35,
+                            "publishing_speaker_probabilities": (
+                                publish_speaker_probabilities
+                            ),
                         }
                     )
 
@@ -806,18 +834,31 @@ async def stream_audio(
             )
         )
 
+        error_message = (
+            f"{type(exception).__name__}: {exception}"
+        )
+
         print(
             "Sortformer WebSocket session "
-            f"failed: {exception}",
+            f"failed: {error_message}",
             flush=True,
         )
+        traceback.print_exc()
 
         try:
             await websocket.send_json(
                 {
                     "type": "error",
-                    "message": str(exception),
+                    "message": error_message,
                 }
+            )
+        except Exception:
+            pass
+
+        try:
+            await websocket.close(
+                code=1011,
+                reason=error_message[:123],
             )
         except Exception:
             pass
