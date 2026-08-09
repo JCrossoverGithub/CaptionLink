@@ -58,6 +58,7 @@ async def main() -> None:
                     "channels": 1,
                     "bits_per_sample": 16,
                     "maximum_speakers": 4,
+                    "publish_speaker_probabilities": True,
                 }
             )
         )

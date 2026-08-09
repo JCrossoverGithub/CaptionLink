@@ -35,6 +35,9 @@ jobs:
       - name: Run overlap detection tests
         run: dotnet run --project TransGo.OverlapDetection.Tests/TransGo.OverlapDetection.Tests.csproj --configuration Release --no-build
 
+      - name: Run overlap benchmark tests
+        run: dotnet run --project TransGo.OverlapBenchmark.Tests/TransGo.OverlapBenchmark.Tests.csproj --configuration Release --no-build
+
       - name: Publish Windows application
         run: dotnet publish TransGo.Windows/TransGo.Windows.csproj --configuration Release --runtime win-x64 --self-contained false --output artifacts/TransGo-win-x64
 
