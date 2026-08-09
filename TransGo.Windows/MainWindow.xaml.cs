@@ -14,6 +14,7 @@ using TransGo.Core.Transcription;
 using TransGo.Speech.Google;
 using TransGo.Speech.Sherpa;
 using TransGo.Speech.Parakeet;
+using TransGo.Speech.Remote;
 using TransGo.Core.Diarization;
 using TransGo.Diarization.Simulated;
 using TransGo.Diarization.Sortformer;
@@ -336,6 +337,9 @@ public partial class MainWindow : Window
                 new ParakeetStreamingTranscriptionEngine(
                     GetSelectedParakeetProfile()),
 
+            "remote" =>
+                new RemoteTranscriptionEngine(),
+
             "google" =>
                 new GoogleStreamingTranscriptionEngine(),
 
@@ -467,6 +471,9 @@ public partial class MainWindow : Window
                 "Local — Parakeet GPU" =>
                     $"Preparing " +
                     $"{GetSelectedParakeetProfile().ToDisplayName()}...",
+
+                "Remote — TransGo GPU Gateway" =>
+                    "Connecting to TransGo GPU gateway…",
 
                 "Google Cloud" =>
                     "Connecting to Google Speech-to-Text…",
