@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+import nemo
 import numpy as np
 import torch
 from omegaconf import OmegaConf, open_dict
@@ -83,9 +84,12 @@ MODEL_FRAME_SAMPLE_COUNT = int(
     )
 )
 
+NEMO_SOURCE_ROOT = (
+    Path(nemo.__file__).resolve().parent.parent
+)
+
 DEFAULT_CONFIG_PATH = (
-    Path.home()
-    / "NeMo-Speech"
+    NEMO_SOURCE_ROOT
     / "examples"
     / "asr"
     / "conf"

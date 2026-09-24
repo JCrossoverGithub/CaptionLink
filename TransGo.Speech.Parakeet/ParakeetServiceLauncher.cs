@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using TransGo.Core.Runtime;
 
 namespace TransGo.Speech.Parakeet;
 
@@ -9,15 +10,12 @@ namespace TransGo.Speech.Parakeet;
 public sealed class ParakeetServiceLauncher
     : IAsyncDisposable
 {
-    private const string DistributionName =
-        "Ubuntu-24.04";
+    private const string ServiceDirectoryName =
+        "TransGo.LocalAsr.Parakeet";
 
-    private const string RepositoryDirectory =
-        "/mnt/c/Users/user/Documents/Projects/" +
-        "TransGo.Desktop/TransGo.LocalAsr.Parakeet";
-
-    private const string PythonExecutable =
-        "$HOME/transgo-parakeet-benchmark/.venv/bin/python";
+    private const string NemoPythonSetup =
+        "NEMO_PYTHON=\"${XDG_DATA_HOME:-$HOME/.local/share}" +
+        "/transgo/nemo-speech/.venv/bin/python\"";
 
     private static readonly TimeSpan StartupTimeout =
         TimeSpan.FromSeconds(90);
@@ -137,11 +135,17 @@ public sealed class ParakeetServiceLauncher
         string serviceProfile =
             profile.ToServiceValue();
 
+        string repositoryDirectory =
+            WslRuntime.GetLinuxRepositoryDirectory(
+                ServiceDirectoryName);
+
         string linuxServiceCommand =
-            $"cd \"{RepositoryDirectory}\" " +
+            $"{NemoPythonSetup} " +
+            "&& test -x \"$NEMO_PYTHON\" " +
+            $"&& cd {WslRuntime.QuoteShellArgument(repositoryDirectory)} " +
             $"&& export TRANSGO_PARAKEET_PROFILE=" +
-            $"{serviceProfile} " +
-            $"&& exec \"{PythonExecutable}\" " +
+            $"{WslRuntime.QuoteShellArgument(serviceProfile)} " +
+            "&& exec \"$NEMO_PYTHON\" " +
             "-m uvicorn parakeet_service:app " +
             "--host 127.0.0.1 " +
             "--port 8765";
@@ -309,37 +313,9 @@ public sealed class ParakeetServiceLauncher
         string linuxCommand,
         bool redirectOutput)
     {
-        var startInfo =
-            new ProcessStartInfo
-            {
-                FileName = "wsl.exe",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput =
-                    redirectOutput,
-                RedirectStandardError =
-                    redirectOutput
-            };
-
-        startInfo.ArgumentList.Add(
-            "--distribution");
-
-        startInfo.ArgumentList.Add(
-            DistributionName);
-
-        startInfo.ArgumentList.Add(
-            "--");
-
-        startInfo.ArgumentList.Add(
-            "bash");
-
-        startInfo.ArgumentList.Add(
-            "-lc");
-
-        startInfo.ArgumentList.Add(
-            linuxCommand);
-
-        return startInfo;
+        return WslRuntime.CreateStartInfo(
+            linuxCommand,
+            redirectOutput);
     }
 
     private static void
