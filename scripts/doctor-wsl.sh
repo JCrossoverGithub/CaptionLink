@@ -42,3 +42,33 @@ done
 
 echo
 echo "WSL environment OK."
+
+echo
+echo "[NeMo runtime]"
+
+NEMO_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/transgo/nemo-speech"
+NEMO_PYTHON="$NEMO_DIR/.venv/bin/python"
+
+if [[ -x "$NEMO_PYTHON" ]]; then
+    "$NEMO_PYTHON" - <<'PY'
+import sys
+
+import fastapi
+import torch
+import uvicorn
+
+print("Python:", sys.version.split()[0])
+print("PyTorch:", torch.__version__)
+print("CUDA runtime:", torch.version.cuda)
+print("FastAPI:", fastapi.__version__)
+print("Uvicorn:", uvicorn.__version__)
+print("CUDA available:", torch.cuda.is_available())
+
+if torch.cuda.is_available():
+    print("GPU:", torch.cuda.get_device_name(0))
+PY
+else
+    echo "NeMo environment: NOT INSTALLED"
+    echo "Run ./scripts/bootstrap-wsl.sh"
+    exit 1
+fi
