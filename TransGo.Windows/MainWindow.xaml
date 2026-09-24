@@ -1,4 +1,4 @@
-﻿<Window x:Class="TransGo.Windows.MainWindow"
+<Window x:Class="TransGo.Windows.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="TransGo"
@@ -125,6 +125,8 @@
                   Tag="simulated"/>
                         <ComboBoxItem Content="NVIDIA Sortformer - Local GPU"
                                       Tag="sortformer"/>
+                        <ComboBoxItem Content="NVIDIA Nemotron 3 - Local GPU"
+                                      Tag="nemotron"/>
                     </ComboBox>
 
                     <TextBlock x:Name="StatusText"

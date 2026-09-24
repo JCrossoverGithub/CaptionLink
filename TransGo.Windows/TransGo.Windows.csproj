@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -18,6 +18,7 @@
     <ProjectReference Include="..\TransGo.Speech.Sherpa\TransGo.Speech.Sherpa.csproj" />
     <ProjectReference Include="..\TransGo.Diarization.Simulated\TransGo.Diarization.Simulated.csproj" />
     <ProjectReference Include="..\TransGo.Diarization.Sortformer\TransGo.Diarization.Sortformer.csproj" />
+    <ProjectReference Include="..\TransGo.Diarization.Nemotron\TransGo.Diarization.Nemotron.csproj" />
   </ItemGroup>
 
 </Project>

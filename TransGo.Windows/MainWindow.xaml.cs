@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -18,6 +18,7 @@ using TransGo.Speech.Remote;
 using TransGo.Core.Diarization;
 using TransGo.Diarization.Simulated;
 using TransGo.Diarization.Sortformer;
+using TransGo.Diarization.Nemotron;
 
 namespace TransGo.Windows;
 
@@ -117,6 +118,9 @@ public partial class MainWindow : Window
 
             "sortformer" =>
                 new SortformerDiarizationEngine(),
+
+            "nemotron" =>
+                new NemotronDiarizationEngine(),
 
             _ => null,
         };
@@ -569,7 +573,10 @@ public partial class MainWindow : Window
                                 TranscriptionSampleRate,
 
                             MaximumSpeakers:
-                                4);
+                                diarizationEngine
+                                    is NemotronDiarizationEngine
+                                        ? 8
+                                        : 4);
 
                     await diarizationEngine.StartAsync(
                         diarizationConfiguration);

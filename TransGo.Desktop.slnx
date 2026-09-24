@@ -4,6 +4,7 @@
   <Project Path="TransGo.Core/TransGo.Core.csproj" />
   <Project Path="TransGo.Diarization.Simulated/TransGo.Diarization.Simulated.csproj" />
   <Project Path="TransGo.Diarization.Sortformer/TransGo.Diarization.Sortformer.csproj" />
+  <Project Path="TransGo.Diarization.Nemotron/TransGo.Diarization.Nemotron.csproj" />
   <Project Path="TransGo.OverlapDetection.Tests/TransGo.OverlapDetection.Tests.csproj" />
   <Project Path="TransGo.OverlapBenchmark/TransGo.OverlapBenchmark.csproj" />
   <Project Path="TransGo.GpuGateway/TransGo.GpuGateway.csproj" />
