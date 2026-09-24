@@ -1,0 +1,21 @@
+# Keep repository text files consistent across Windows, WSL, Linux, and macOS.
+* text=auto eol=lf
+
+# Windows command scripts require CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.wav binary
+*.mp3 binary
+*.mp4 binary
+*.zip binary
+*.dll binary
+*.exe binary
+*.onnx binary
+*.nemo binary
