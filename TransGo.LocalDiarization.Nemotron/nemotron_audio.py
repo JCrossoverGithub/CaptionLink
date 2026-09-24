@@ -7,7 +7,7 @@ import numpy as np
 import soxr
 
 
-PREDICTION_FRAME_SAMPLE_COUNT = 1_280
+PREDICTION_FRAME_SAMPLE_COUNT = 160
 
 
 @dataclass(frozen=True)
