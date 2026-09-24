@@ -71,7 +71,7 @@ class NemotronSpeakerActivityTracker:
         self,
         maximum_speakers: int,
         start_threshold: float = 0.50,
-        stop_threshold: float = 0.35,
+        stop_threshold: float = 0.50,
     ) -> None:
         if maximum_speakers <= 0:
             raise ValueError(

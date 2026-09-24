@@ -195,7 +195,7 @@ async def health() -> dict[str, object]:
             MODEL_INPUT_WINDOW_SAMPLE_COUNT
         ),
         "speaker_activity_start_threshold": 0.50,
-        "speaker_activity_stop_threshold": 0.35,
+        "speaker_activity_stop_threshold": 0.50,
     }
 
     health_data.update(
@@ -608,7 +608,7 @@ async def stream_audio(
                                 MODEL_INPUT_WINDOW_SAMPLE_COUNT
                             ),
                             "speaker_activity_start_threshold": 0.50,
-                            "speaker_activity_stop_threshold": 0.35,
+                            "speaker_activity_stop_threshold": 0.50,
                             "publishing_speaker_probabilities": (
                                 publish_speaker_probabilities
                             ),
