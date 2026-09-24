@@ -18,6 +18,8 @@ public sealed record BenchmarkOptions(
     public DiarizationBackend Engine { get; init; } =
         DiarizationBackend.Sortformer;
 
+    public string? DiarizationRttmDirectory { get; init; }
+
     public static BenchmarkOptions Parse(
         string[] arguments)
     {
@@ -33,6 +35,7 @@ public sealed record BenchmarkOptions(
             "--collar-ms",
             "--maximum-speakers",
             "--trace-dir",
+            "--diarization-rttm-dir",
         ];
 
         var values =
@@ -176,6 +179,14 @@ public sealed record BenchmarkOptions(
                 ? Path.GetFullPath(traceDirectoryText)
                 : null;
 
+        string? diarizationRttmDirectory =
+            values.TryGetValue(
+                "--diarization-rttm-dir",
+                out string? diarizationRttmDirectoryText)
+                ? Path.GetFullPath(
+                    diarizationRttmDirectoryText)
+                : null;
+
         if (
             engine == DiarizationBackend.Nemotron &&
             traceDirectory is not null)
@@ -200,6 +211,8 @@ public sealed record BenchmarkOptions(
             traceDirectory)
         {
             Engine = engine,
+            DiarizationRttmDirectory =
+                diarizationRttmDirectory,
         };
     }
 
@@ -220,6 +233,8 @@ public sealed record BenchmarkOptions(
           --collar-ms <count>      Practical scoring collar (default: 250)
           --maximum-speakers <n>   Speaker capacity; Sortformer 1-4, Nemotron 1-8 (default: 4)
           --trace-dir <path>       Save raw Sortformer probability traces for CPU replay
+          --diarization-rttm-dir <path>
+                                   Save finalized speaker activities as RTTM
           --realtime               Pace audio in real time and measure 30-second buffer availability
           --resume                 Skip completed recordings in the output checkpoint and retry failures
         """;

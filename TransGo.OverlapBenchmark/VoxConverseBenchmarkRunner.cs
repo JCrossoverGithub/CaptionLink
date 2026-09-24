@@ -230,6 +230,12 @@ public sealed class VoxConverseBenchmarkRunner
         var finalRegions =
             new List<OverlapRegion>();
 
+        var finalSpeakerActivities =
+            new Dictionary<string, SpeakerActivity>(
+                StringComparer.Ordinal);
+
+        object activityGate = new();
+
         var finalizationLatencies =
             new List<double>();
 
@@ -314,11 +320,24 @@ public sealed class VoxConverseBenchmarkRunner
 
         engine.ActivityReceived += (_, eventArgs) =>
         {
+            SpeakerActivity activity =
+                eventArgs.Activity;
+
             observedActivityEnd = Math.Max(
                 observedActivityEnd,
-                eventArgs.Activity.EndTime.TotalSeconds);
+                activity.EndTime.TotalSeconds);
 
-            detector.Process(eventArgs.Activity);
+            if (activity.IsFinal)
+            {
+                lock (activityGate)
+                {
+                    finalSpeakerActivities[
+                        activity.ActivityId
+                    ] = activity;
+                }
+            }
+
+            detector.Process(activity);
         };
 
         await engine.StartAsync(
@@ -400,6 +419,28 @@ public sealed class VoxConverseBenchmarkRunner
         detector.Complete(
             TimeSpan.FromSeconds(
                 wave.DurationSeconds));
+
+        if (
+            _options.DiarizationRttmDirectory
+            is not null)
+        {
+            SpeakerActivity[] capturedActivities;
+
+            lock (activityGate)
+            {
+                capturedActivities =
+                    finalSpeakerActivities
+                        .Values
+                        .ToArray();
+            }
+
+            await DiarizationRttmWriter.WriteAsync(
+                _options.DiarizationRttmDirectory,
+                input.RecordingId,
+                wave.DurationSeconds,
+                capturedActivities,
+                cancellationToken);
+        }
 
         if (_options.TraceDirectory is not null)
         {
