@@ -2,6 +2,7 @@ using System.Diagnostics;
 using TransGo.Core.Audio;
 using TransGo.Core.Diarization;
 using TransGo.Diarization.Sortformer;
+using TransGo.Diarization.Nemotron;
 
 namespace TransGo.OverlapBenchmark;
 
@@ -273,21 +274,42 @@ public sealed class VoxConverseBenchmarkRunner
         using var audioProgress =
             new AudioProgressGate();
 
-        await using var engine =
-            new SortformerDiarizationEngine();
+        await using IDiarizationEngine engine =
+            CreateDiarizationEngine();
 
-        engine.AudioProgressReceived +=
-            audioProgress.Observe;
-
-        if (_options.TraceDirectory is not null)
+        switch (engine)
         {
-            engine.ProbabilityBatchReceived += (_, eventArgs) =>
-            {
-                lock (probabilityGate)
+            case SortformerDiarizationEngine sortformer:
+                sortformer.AudioProgressReceived +=
+                    (_, eventArgs) =>
+                        audioProgress.Observe(
+                            eventArgs.ChunksReceived);
+
+                if (_options.TraceDirectory is not null)
                 {
-                    probabilityBatches.Add(eventArgs.Batch);
+                    sortformer.ProbabilityBatchReceived +=
+                        (_, eventArgs) =>
+                        {
+                            lock (probabilityGate)
+                            {
+                                probabilityBatches.Add(
+                                    eventArgs.Batch);
+                            }
+                        };
                 }
-            };
+
+                break;
+
+            case NemotronDiarizationEngine nemotron:
+                nemotron.AudioProgressReceived +=
+                    (_, eventArgs) =>
+                        audioProgress.Observe(
+                            eventArgs.ChunksReceived);
+                break;
+
+            default:
+                throw new InvalidOperationException(
+                    "Unsupported diarization engine.");
         }
 
         engine.ActivityReceived += (_, eventArgs) =>
@@ -449,6 +471,22 @@ public sealed class VoxConverseBenchmarkRunner
                 : null,
             reference,
             predicted);
+    }
+
+    private IDiarizationEngine CreateDiarizationEngine()
+    {
+        return _options.Engine switch
+        {
+            DiarizationBackend.Sortformer =>
+                new SortformerDiarizationEngine(),
+
+            DiarizationBackend.Nemotron =>
+                new NemotronDiarizationEngine(),
+
+            _ => throw new InvalidOperationException(
+                $"Unsupported diarization engine: " +
+                $"{_options.Engine}."),
+        };
     }
 
     private RecordingInput[] ResolveInputs()

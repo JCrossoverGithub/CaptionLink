@@ -1,5 +1,3 @@
-using TransGo.Diarization.Sortformer;
-
 namespace TransGo.OverlapBenchmark;
 
 internal sealed class AudioProgressGate
@@ -13,13 +11,16 @@ internal sealed class AudioProgressGate
 
     private long _acknowledgedChunks;
 
-    public void Observe(
-        object? sender,
-        SortformerAudioProgressEventArgs eventArgs)
+    public void Observe(long chunksReceived)
     {
+        if (chunksReceived <= 0)
+        {
+            return;
+        }
+
         Volatile.Write(
             ref _acknowledgedChunks,
-            eventArgs.ChunksReceived);
+            chunksReceived);
 
         _signal.Release();
     }
@@ -41,7 +42,7 @@ internal sealed class AudioProgressGate
             if (!signaled)
             {
                 throw new TimeoutException(
-                    "Sortformer did not acknowledge " +
+                    "The diarization engine did not acknowledge " +
                     $"audio chunk {requiredChunks} within " +
                     $"{ProgressTimeout.TotalSeconds:0} seconds.");
             }

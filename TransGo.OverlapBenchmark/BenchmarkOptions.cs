@@ -15,6 +15,9 @@ public sealed record BenchmarkOptions(
     bool Resume,
     string? TraceDirectory)
 {
+    public DiarizationBackend Engine { get; init; } =
+        DiarizationBackend.Sortformer;
+
     public static BenchmarkOptions Parse(
         string[] arguments)
     {
@@ -22,6 +25,7 @@ public sealed record BenchmarkOptions(
         [
             "--audio-dir",
             "--rttm-dir",
+            "--engine",
             "--output-dir",
             "--max-files",
             "--include",
@@ -95,6 +99,13 @@ public sealed record BenchmarkOptions(
                     "benchmark-results",
                     "voxconverse"));
 
+        DiarizationBackend engine =
+            values.TryGetValue(
+                "--engine",
+                out string? engineText)
+                ? ParseEngine(engineText)
+                : DiarizationBackend.Sortformer;
+
         int? maximumFiles =
             values.TryGetValue(
                 "--max-files",
@@ -131,11 +142,17 @@ public sealed record BenchmarkOptions(
                     "--maximum-speakers")
                 : 4;
 
-        if (maximumSpeakers > 4)
+        int supportedMaximumSpeakers =
+            engine == DiarizationBackend.Nemotron
+                ? 8
+                : 4;
+
+        if (maximumSpeakers > supportedMaximumSpeakers)
         {
             throw new ArgumentOutOfRangeException(
                 "--maximum-speakers",
-                "Sortformer supports at most four speakers.");
+                $"{engine} supports at most " +
+                $"{supportedMaximumSpeakers} speakers.");
         }
 
         IReadOnlySet<string> includedRecordingIds =
@@ -159,6 +176,16 @@ public sealed record BenchmarkOptions(
                 ? Path.GetFullPath(traceDirectoryText)
                 : null;
 
+        if (
+            engine == DiarizationBackend.Nemotron &&
+            traceDirectory is not null)
+        {
+            throw new ArgumentException(
+                "Nemotron probability trace capture is not " +
+                "implemented yet. Run the live benchmark " +
+                "without --trace-dir.");
+        }
+
         return new BenchmarkOptions(
             Path.GetFullPath(audioDirectory),
             Path.GetFullPath(rttmDirectory),
@@ -170,7 +197,10 @@ public sealed record BenchmarkOptions(
             maximumSpeakers,
             switches.Contains("--realtime"),
             switches.Contains("--resume"),
-            traceDirectory);
+            traceDirectory)
+        {
+            Engine = engine,
+        };
     }
 
     public static string Usage =>
@@ -183,15 +213,39 @@ public sealed record BenchmarkOptions(
 
         Optional:
           --output-dir <path>      Report directory (default: benchmark-results/voxconverse)
+          --engine <name>          sortformer or nemotron (default: sortformer)
           --max-files <count>      Run the first N recordings
           --include <id,id,...>    Run only the listed recording IDs
           --chunk-ms <count>       Streaming chunk size (default: 100)
           --collar-ms <count>      Practical scoring collar (default: 250)
-          --maximum-speakers <n>   Sortformer speaker capacity, 1-4 (default: 4)
+          --maximum-speakers <n>   Speaker capacity; Sortformer 1-4, Nemotron 1-8 (default: 4)
           --trace-dir <path>       Save raw Sortformer probability traces for CPU replay
           --realtime               Pace audio in real time and measure 30-second buffer availability
           --resume                 Skip completed recordings in the output checkpoint and retry failures
         """;
+
+    private static DiarizationBackend ParseEngine(
+        string value)
+    {
+        if (string.Equals(
+                value,
+                "sortformer",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return DiarizationBackend.Sortformer;
+        }
+
+        if (string.Equals(
+                value,
+                "nemotron",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return DiarizationBackend.Nemotron;
+        }
+
+        throw new ArgumentException(
+            "--engine must be 'sortformer' or 'nemotron'.");
+    }
 
     private static string Required(
         IReadOnlyDictionary<string, string> values,

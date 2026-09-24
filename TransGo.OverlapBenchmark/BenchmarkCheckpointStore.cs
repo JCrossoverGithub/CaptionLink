@@ -28,7 +28,8 @@ public sealed record BenchmarkCheckpointConfiguration(
     double ChunkMilliseconds,
     double PracticalCollarMilliseconds,
     int MaximumSpeakers,
-    bool Realtime)
+    bool Realtime,
+    string? Engine = null)
 {
     public static BenchmarkCheckpointConfiguration FromOptions(
         BenchmarkOptions options) =>
@@ -42,7 +43,8 @@ public sealed record BenchmarkCheckpointConfiguration(
             options.ChunkDuration.TotalMilliseconds,
             options.PracticalCollar.TotalMilliseconds,
             options.MaximumSpeakers,
-            options.Realtime);
+            options.Realtime,
+            options.Engine.ToString().ToLowerInvariant());
 
     public bool IsCompatibleWith(
         BenchmarkCheckpointConfiguration other) =>
@@ -62,7 +64,11 @@ public sealed record BenchmarkCheckpointConfiguration(
         PracticalCollarMilliseconds ==
             other.PracticalCollarMilliseconds &&
         MaximumSpeakers == other.MaximumSpeakers &&
-        Realtime == other.Realtime;
+        Realtime == other.Realtime &&
+        string.Equals(
+            Engine ?? "sortformer",
+            other.Engine ?? "sortformer",
+            StringComparison.OrdinalIgnoreCase);
 }
 
 public sealed record BenchmarkCheckpoint(
