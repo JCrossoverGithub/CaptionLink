@@ -16,6 +16,8 @@ public sealed class ParakeetServiceClient
     private static readonly Uri DefaultServiceUri =
         new("ws://localhost:8765/stream");
 
+    private readonly Uri _serviceUri;
+
     private readonly object _gate = new();
 
     /*
@@ -30,6 +32,20 @@ public sealed class ParakeetServiceClient
     private Task? _receiveTask;
 
     private bool _disposed;
+
+    public ParakeetServiceClient()
+        : this(DefaultServiceUri)
+    {
+    }
+
+    public ParakeetServiceClient(
+        Uri serviceUri)
+    {
+        ArgumentNullException.ThrowIfNull(
+            serviceUri);
+
+        _serviceUri = serviceUri;
+    }
 
     public event EventHandler<ParakeetServiceMessageEventArgs>?
         MessageReceived;
@@ -83,7 +99,7 @@ public sealed class ParakeetServiceClient
         try
         {
             await socket.ConnectAsync(
-                DefaultServiceUri,
+                _serviceUri,
                 cancellationToken);
 
             Task receiveTask =

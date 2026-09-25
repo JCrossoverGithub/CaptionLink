@@ -363,6 +363,9 @@ public partial class MainWindow : Window
                 new ParakeetStreamingTranscriptionEngine(
                     GetSelectedParakeetProfile()),
 
+            "multitalker-parakeet" =>
+                new MultitalkerParakeetTranscriptionEngine(),
+
             "remote" =>
                 new RemoteTranscriptionEngine(),
 
@@ -1066,30 +1069,40 @@ public partial class MainWindow : Window
         TranscriptResult result =
             e.Result;
 
-        SpeakerAttributionDecision
-            attributionDecision =
-                SpeakerAttributionResolver.Resolve(
-                    result,
-                    _speakerActivities.Values);
-
-        if (
-            !string.IsNullOrWhiteSpace(
-                attributionDecision
-                    .CompositeSpeakerId))
+        /*
+         * Some transcription providers, such as Multitalker
+         * Parakeet, already own speaker attribution. Preserve
+         * that identity instead of replacing it with a second
+         * diarization decision.
+         */
+        if (string.IsNullOrWhiteSpace(
+                result.SpeakerId))
         {
-            result = result with
-            {
-                SpeakerId =
+            SpeakerAttributionDecision
+                attributionDecision =
+                    SpeakerAttributionResolver.Resolve(
+                        result,
+                        _speakerActivities.Values);
+
+            if (
+                !string.IsNullOrWhiteSpace(
                     attributionDecision
-                        .CompositeSpeakerId,
-            };
-        }
+                        .CompositeSpeakerId))
+            {
+                result = result with
+                {
+                    SpeakerId =
+                        attributionDecision
+                            .CompositeSpeakerId,
+                };
+            }
 
-        if (result.IsFinal)
-        {
-            LogSpeakerAttributionDecision(
-                result,
-                attributionDecision);
+            if (result.IsFinal)
+            {
+                LogSpeakerAttributionDecision(
+                    result,
+                    attributionDecision);
+            }
         }
 
         string displayText =

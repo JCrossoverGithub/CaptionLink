@@ -140,6 +140,9 @@ public sealed class ParakeetServiceLauncher
                 ServiceDirectoryName);
 
         string linuxServiceCommand =
+            "pkill -f " +
+            "'[u]vicorn multitalker_service:app' " +
+            ">/dev/null 2>&1 || true; " +
             $"{NemoPythonSetup} " +
             "&& test -x \"$NEMO_PYTHON\" " +
             $"&& cd {WslRuntime.QuoteShellArgument(repositoryDirectory)} " +
