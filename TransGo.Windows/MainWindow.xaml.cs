@@ -114,11 +114,127 @@ public partial class MainWindow : Window
             OverlapDetector_RegionUpdated;
 
         LoadOutputDevices();
+        UpdateProviderDependentControls();
+    }
+
+    private int _externalSpeakerAttributionSelectionIndex;
+    private bool _wasMultitalkerProviderSelected;
+
+    private string GetSelectedProviderId()
+    {
+        if (
+            TranscriptionProviderComboBox.SelectedItem
+                is not ComboBoxItem selectedItem)
+        {
+            return string.Empty;
+        }
+
+        return selectedItem.Tag?
+            .ToString()?
+            .Trim()
+            .ToLowerInvariant()
+            ?? string.Empty;
+    }
+
+    private bool IsMultitalkerProviderSelected()
+    {
+        return string.Equals(
+            GetSelectedProviderId(),
+            "multitalker-parakeet",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsStandardParakeetProviderSelected()
+    {
+        return string.Equals(
+            GetSelectedProviderId(),
+            "parakeet",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void UpdateProviderDependentControls()
+    {
+        /*
+         * The provider SelectionChanged event can fire during
+         * InitializeComponent before all named controls exist.
+         */
+        if (
+            TranscriptionProviderComboBox is null
+            || ParakeetProfileComboBox is null
+            || SpeakerAttributionComboBox is null
+            || SpeakerAttributionHintText is null)
+        {
+            return;
+        }
+
+        bool isMultitalker =
+            IsMultitalkerProviderSelected();
+
+        if (
+            isMultitalker
+            && !_wasMultitalkerProviderSelected)
+        {
+            /*
+             * Remember the user's external diarization choice.
+             * Multitalker already includes Nemotron internally.
+             */
+            _externalSpeakerAttributionSelectionIndex =
+                Math.Max(
+                    0,
+                    SpeakerAttributionComboBox.SelectedIndex);
+
+            SpeakerAttributionComboBox.SelectedIndex = 0;
+        }
+        else if (
+            !isMultitalker
+            && _wasMultitalkerProviderSelected
+            && _externalSpeakerAttributionSelectionIndex
+                < SpeakerAttributionComboBox.Items.Count)
+        {
+            SpeakerAttributionComboBox.SelectedIndex =
+                _externalSpeakerAttributionSelectionIndex;
+        }
+
+        _wasMultitalkerProviderSelected =
+            isMultitalker;
+
+        bool configurationEnabled =
+            TranscriptionProviderComboBox.IsEnabled;
+
+        ParakeetProfileComboBox.IsEnabled =
+            configurationEnabled
+            && IsStandardParakeetProviderSelected();
+
+        SpeakerAttributionComboBox.IsEnabled =
+            configurationEnabled
+            && !isMultitalker;
+
+        SpeakerAttributionHintText.Text =
+            isMultitalker
+                ? "Included automatically: Multitalker uses Nemotron 3 for speaker detection."
+                : "Optional speaker detection for standard transcription providers.";
+    }
+
+    private void
+        TranscriptionProviderComboBox_SelectionChanged(
+            object sender,
+            SelectionChangedEventArgs e)
+    {
+        UpdateProviderDependentControls();
     }
 
     private IDiarizationEngine?
         CreateSelectedDiarizationEngine()
     {
+        /*
+         * Multitalker performs speaker detection internally.
+         * Never start a second external diarization engine.
+         */
+        if (IsMultitalkerProviderSelected())
+        {
+            return null;
+        }
+
         if (
             SpeakerAttributionComboBox.SelectedItem
                 is not ComboBoxItem selectedItem)
@@ -500,6 +616,9 @@ public partial class MainWindow : Window
                 "Local — Parakeet GPU" =>
                     $"Preparing " +
                     $"{GetSelectedParakeetProfile().ToDisplayName()}...",
+
+                "Local — Multitalker Parakeet" =>
+                    "Preparing Multitalker Parakeet + Nemotron 3…",
 
                 "Remote — TransGo GPU Gateway" =>
                     "Connecting to TransGo GPU gateway…",
@@ -1672,8 +1791,8 @@ public partial class MainWindow : Window
         OutputDeviceComboBox.IsEnabled = true;
         RefreshDevicesButton.IsEnabled = true;
         TranscriptionProviderComboBox.IsEnabled = true;
-        ParakeetProfileComboBox.IsEnabled = true;
-        SpeakerAttributionComboBox.IsEnabled = true;
+
+        UpdateProviderDependentControls();
     }
 
     protected override async void OnClosed(

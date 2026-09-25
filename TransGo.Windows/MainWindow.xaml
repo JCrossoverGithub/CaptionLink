@@ -65,7 +65,8 @@
                               Height="38"
                               Padding="8,4"
                               Margin="0,0,0,22"
-                              SelectedIndex="0">
+                              SelectedIndex="0"
+                              SelectionChanged="TranscriptionProviderComboBox_SelectionChanged">
 
                         <ComboBoxItem Content="Local — Parakeet GPU"
                                       Tag="parakeet"/>
@@ -118,7 +119,7 @@
                     <ComboBox x:Name="SpeakerAttributionComboBox"
           Height="38"
           Padding="8,4"
-          Margin="0,0,0,22"
+          Margin="0,0,0,6"
           SelectedIndex="0">
 
                         <ComboBoxItem Content="Off"
@@ -131,6 +132,13 @@
                         <ComboBoxItem Content="NVIDIA Nemotron 3 - Local GPU"
                                       Tag="nemotron"/>
                     </ComboBox>
+
+                    <TextBlock x:Name="SpeakerAttributionHintText"
+                               Text="Optional speaker detection for standard transcription providers."
+                               Margin="0,0,0,22"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               Foreground="#AAB6CA"/>
 
                     <TextBlock x:Name="StatusText"
                                Text="Not listening"
