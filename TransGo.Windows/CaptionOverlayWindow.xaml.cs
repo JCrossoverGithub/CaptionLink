@@ -14,9 +14,24 @@ public partial class CaptionOverlayWindow : Window
     }
 
     public void SetCaption(
+        string? speakerLabel,
         string text,
         bool isFinal)
     {
+        bool hasSpeakerLabel =
+            !string.IsNullOrWhiteSpace(
+                speakerLabel);
+
+        SpeakerLabelText.Text =
+            hasSpeakerLabel
+                ? speakerLabel!.Trim()
+                : string.Empty;
+
+        SpeakerLabelText.Visibility =
+            hasSpeakerLabel
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
         CaptionText.Text =
             string.IsNullOrWhiteSpace(text)
                 ? "Listening for speech..."
@@ -24,18 +39,24 @@ public partial class CaptionOverlayWindow : Window
 
         /*
          * Interim captions appear slightly dimmer because
-         * Google may replace them as recognition improves.
+         * the recognition engine may replace them.
          */
-        CaptionText.Opacity =
+        CaptionPanel.Opacity =
             isFinal ? 1.0 : 0.82;
     }
 
     public void ResetCaption()
     {
+        SpeakerLabelText.Text =
+            string.Empty;
+
+        SpeakerLabelText.Visibility =
+            Visibility.Collapsed;
+
         CaptionText.Text =
             "Listening for speech...";
 
-        CaptionText.Opacity = 1.0;
+        CaptionPanel.Opacity = 1.0;
     }
 
     private void CaptionOverlayWindow_Loaded(

@@ -1070,6 +1070,13 @@ public partial class MainWindow : Window
         string displayText =
             GetTranscriptDisplayText(result);
 
+        string? speakerLabel =
+            string.IsNullOrWhiteSpace(
+                result.SpeakerId)
+                ? null
+                : FormatSpeakerLabel(
+                    result.SpeakerId);
+
         _ = Dispatcher.BeginInvoke(new Action(() =>
         {
             if (result.IsFinal)
@@ -1124,7 +1131,8 @@ public partial class MainWindow : Window
              * never the entire accumulated transcript.
              */
             _captionOverlay.SetCaption(
-                GetOverlayCaption(displayText),
+                speakerLabel,
+                GetOverlayCaption(result.Text),
                 result.IsFinal);
         }));
     }
