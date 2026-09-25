@@ -42,6 +42,11 @@ public partial class MainWindow : Window
     private readonly List<TranscriptDisplayEntry>
         _finalTranscriptEntries = new();
 
+    private bool _followLiveTranscript = true;
+
+    private const double
+        LiveTranscriptBottomTolerance = 32.0;
+
     private static readonly Brush[] TranscriptSpeakerBrushes =
     [
         new SolidColorBrush(Color.FromRgb(125, 211, 252)),
@@ -667,6 +672,10 @@ public partial class MainWindow : Window
                 string.Empty;
 
             _finalTranscriptEntries.Clear();
+
+            _followLiveTranscript = true;
+            JumpToLiveButton.Visibility =
+                Visibility.Collapsed;
 
             TranscriptText.Inlines.Clear();
             TranscriptText.Inlines.Add(
@@ -1314,6 +1323,80 @@ public partial class MainWindow : Window
             TranscriptText.Inlines.Add(
                 new Run("Listening for speech…"));
         }
+
+        ScrollTranscriptToLiveIfNeeded();
+    }
+
+    private void TranscriptScrollViewer_ScrollChanged(
+        object sender,
+        ScrollChangedEventArgs e)
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        if (Math.Abs(e.ExtentHeightChange) > 0.01)
+        {
+            UpdateJumpToLiveVisibility();
+            return;
+        }
+
+        if (Math.Abs(e.VerticalChange) <= 0.01)
+        {
+            return;
+        }
+
+        double distanceFromBottom =
+            e.ExtentHeight
+            - e.ViewportHeight
+            - e.VerticalOffset;
+
+        _followLiveTranscript =
+            distanceFromBottom
+                <= LiveTranscriptBottomTolerance;
+
+        UpdateJumpToLiveVisibility();
+    }
+
+    private void JumpToLiveButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        _followLiveTranscript = true;
+
+        TranscriptScrollViewer.ScrollToEnd();
+
+        UpdateJumpToLiveVisibility();
+    }
+
+    private void ScrollTranscriptToLiveIfNeeded()
+    {
+        if (!_followLiveTranscript)
+        {
+            return;
+        }
+
+        _ = Dispatcher.BeginInvoke(
+            new Action(() =>
+            {
+                if (!_followLiveTranscript)
+                {
+                    return;
+                }
+
+                TranscriptScrollViewer.ScrollToEnd();
+                UpdateJumpToLiveVisibility();
+            }),
+            System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    private void UpdateJumpToLiveVisibility()
+    {
+        JumpToLiveButton.Visibility =
+            _followLiveTranscript
+                ? Visibility.Collapsed
+                : Visibility.Visible;
     }
 
     private void AddTranscriptEntry(

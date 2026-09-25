@@ -183,17 +183,31 @@
                             BorderBrush="#202D3D"
                             BorderThickness="1">
 
-                        <ScrollViewer x:Name="TranscriptScrollViewer"
-                                      VerticalScrollBarVisibility="Auto"
-                                      HorizontalScrollBarVisibility="Disabled">
+                        <Grid>
+                            <ScrollViewer x:Name="TranscriptScrollViewer"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          ScrollChanged="TranscriptScrollViewer_ScrollChanged">
 
-                            <TextBlock x:Name="TranscriptText"
-                                       Text="Waiting for speech..."
-                                       TextWrapping="Wrap"
-                                       FontSize="25"
-                                       LineHeight="38"
-                                       Foreground="White"/>
-                        </ScrollViewer>
+                                <TextBlock x:Name="TranscriptText"
+                                           Text="Waiting for speech..."
+                                           Padding="0,0,0,56"
+                                           TextWrapping="Wrap"
+                                           FontSize="25"
+                                           LineHeight="38"
+                                           Foreground="White"/>
+                            </ScrollViewer>
+
+                            <Button x:Name="JumpToLiveButton"
+                                    Content="Jump to live"
+                                    Width="112"
+                                    Height="36"
+                                    Margin="0,0,12,12"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom"
+                                    Visibility="Collapsed"
+                                    Click="JumpToLiveButton_Click"/>
+                        </Grid>
                     </Border>
                 </Grid>
             </Border>
