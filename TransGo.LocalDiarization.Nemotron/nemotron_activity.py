@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from nemotron_streaming import (
+from nemotron_hf_streaming import (
     PREDICTION_FRAME_DURATION_SECONDS,
     NemotronPredictionBatch,
 )

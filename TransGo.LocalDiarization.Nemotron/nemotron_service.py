@@ -16,26 +16,14 @@ from nemotron_activity import (
     NemotronSpeakerActivityTracker,
     SpeakerActivityUpdate,
 )
-from nemotron_audio import (
-    StreamingNemotronAudioPreprocessor,
-)
-from nemotron_streaming import (
-    CHUNK_LENGTH,
-    CHUNK_RIGHT_CONTEXT,
-    FIFO_LENGTH,
+from nemotron_hf_streaming import (
     MAXIMUM_SPEAKERS,
-    MODEL_INPUT_WINDOW_DURATION_SECONDS,
-    MODEL_INPUT_WINDOW_SAMPLE_COUNT,
     MODEL_NAME,
-    MODEL_PREDICTION_HOP_DURATION_SECONDS,
-    MODEL_PREDICTION_HOP_SAMPLE_COUNT,
     MODEL_SAMPLE_RATE,
     PREDICTION_FRAME_DURATION_SECONDS,
-    SPEAKER_CACHE_LENGTH,
-    SPEAKER_CACHE_UPDATE_PERIOD,
+    NemotronHfStreamingSession,
     NemotronPredictionBatch,
-    NemotronStreamingSession,
-    build_nemotron_model,
+    build_nemotron_hf_runtime,
 )
 
 
@@ -59,9 +47,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
 
     try:
-        model = await event_loop.run_in_executor(
+        processor, model = await event_loop.run_in_executor(
             executor,
-            build_nemotron_model,
+            build_nemotron_hf_runtime,
         )
     except Exception:
         executor.shutdown(
@@ -70,6 +58,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
         raise
 
+    app.state.processor = processor
     app.state.model = model
     app.state.diarization_executor = executor
     app.state.session_lock = asyncio.Lock()
@@ -87,6 +76,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         yield
     finally:
+        app.state.processor = None
         app.state.model = None
 
         executor.shutdown(
@@ -149,19 +139,49 @@ def get_cuda_memory_stats() -> dict[str, object]:
 
 @app.get("/health")
 async def health() -> dict[str, object]:
+    processor = getattr(
+        app.state,
+        "processor",
+        None,
+    )
+
     model = getattr(
         app.state,
         "model",
         None,
     )
 
+    ready = (
+        processor is not None
+        and model is not None
+    )
+
+    prediction_hop_duration_seconds = (
+        processor.num_mel_frames_per_step
+        * PREDICTION_FRAME_DURATION_SECONDS
+        if processor is not None
+        else 0.72
+    )
+
+    model_input_window_duration_seconds = (
+        processor.streaming_latency_ms / 1000.0
+        if processor is not None
+        else 1.04
+    )
+
+    model_input_window_sample_count = (
+        processor.num_samples_first_audio_chunk
+        if processor is not None
+        else 16_680
+    )
+
     health_data: dict[str, object] = {
         "status": (
             "ready"
-            if model is not None
+            if ready
             else "starting"
         ),
-        "model_loaded": model is not None,
+        "model_loaded": ready,
         "model": MODEL_NAME,
         "cuda_available": torch.cuda.is_available(),
         "gpu": getattr(
@@ -170,29 +190,30 @@ async def health() -> dict[str, object]:
             None,
         ),
         "streaming": True,
+        "streaming_backend": "huggingface",
+        "streaming_mode": "low_latency",
         "model_sample_rate": MODEL_SAMPLE_RATE,
         "maximum_speakers": MAXIMUM_SPEAKERS,
         "prediction_frame_duration_seconds": (
             PREDICTION_FRAME_DURATION_SECONDS
         ),
         "prediction_hop_duration_seconds": (
-            MODEL_PREDICTION_HOP_DURATION_SECONDS
+            prediction_hop_duration_seconds
         ),
-        "prediction_hop_sample_count": (
-            MODEL_PREDICTION_HOP_SAMPLE_COUNT
+        "prediction_hop_sample_count": round(
+            prediction_hop_duration_seconds
+            * MODEL_SAMPLE_RATE
         ),
-        "chunk_length": CHUNK_LENGTH,
-        "chunk_right_context": CHUNK_RIGHT_CONTEXT,
-        "fifo_length": FIFO_LENGTH,
-        "speaker_cache_update_period": (
-            SPEAKER_CACHE_UPDATE_PERIOD
-        ),
-        "speaker_cache_length": SPEAKER_CACHE_LENGTH,
         "model_input_window_duration_seconds": (
-            MODEL_INPUT_WINDOW_DURATION_SECONDS
+            model_input_window_duration_seconds
         ),
         "model_input_window_sample_count": (
-            MODEL_INPUT_WINDOW_SAMPLE_COUNT
+            model_input_window_sample_count
+        ),
+        "streaming_chunk_sample_count": (
+            processor.num_samples_per_audio_chunk
+            if processor is not None
+            else 17_040
         ),
         "speaker_activity_start_threshold": 0.50,
         "speaker_activity_stop_threshold": 0.50,
@@ -271,8 +292,9 @@ async def stream_audio(
     )
 
     streaming_session = (
-        NemotronStreamingSession(
-            app.state.model
+        NemotronHfStreamingSession(
+            app.state.processor,
+            app.state.model,
         )
     )
 
@@ -296,11 +318,6 @@ async def stream_audio(
     prediction_frame_count = 0
     activity_message_count = 0
     publish_speaker_probabilities = False
-
-    audio_preprocessor: (
-        StreamingNemotronAudioPreprocessor
-        | None
-    ) = None
 
     await websocket.send_json(
         {
@@ -396,18 +413,13 @@ async def stream_audio(
                 update
             )
 
-    async def process_windows(
-        windows,
+    async def process_prediction_batches(
+        batches,
     ) -> None:
         nonlocal model_window_count
 
-        for window in windows:
+        for batch in batches:
             model_window_count += 1
-
-            batch = await run_session_method(
-                streaming_session.process,
-                window,
-            )
 
             await process_prediction_batch(
                 batch
@@ -545,21 +557,6 @@ async def stream_audio(
                         )
                         continue
 
-                    audio_preprocessor = (
-                        StreamingNemotronAudioPreprocessor(
-                            input_sample_rate=sample_rate,
-                            output_sample_rate=(
-                                MODEL_SAMPLE_RATE
-                            ),
-                            window_sample_count=(
-                                MODEL_INPUT_WINDOW_SAMPLE_COUNT
-                            ),
-                            hop_sample_count=(
-                                MODEL_PREDICTION_HOP_SAMPLE_COUNT
-                            ),
-                        )
-                    )
-
                     activity_tracker = (
                         NemotronSpeakerActivityTracker(
                             maximum_speakers=(
@@ -570,6 +567,7 @@ async def stream_audio(
 
                     await run_session_method(
                         streaming_session.open,
+                        sample_rate,
                         maximum_speakers,
                     )
 
@@ -599,13 +597,18 @@ async def stream_audio(
                                 PREDICTION_FRAME_DURATION_SECONDS
                             ),
                             "prediction_hop_duration_seconds": (
-                                MODEL_PREDICTION_HOP_DURATION_SECONDS
+                                app.state.processor
+                                .num_mel_frames_per_step
+                                * PREDICTION_FRAME_DURATION_SECONDS
                             ),
                             "model_input_window_duration_seconds": (
-                                MODEL_INPUT_WINDOW_DURATION_SECONDS
+                                app.state.processor
+                                .streaming_latency_ms
+                                / 1000.0
                             ),
                             "model_input_window_sample_count": (
-                                MODEL_INPUT_WINDOW_SAMPLE_COUNT
+                                app.state.processor
+                                .num_samples_first_audio_chunk
                             ),
                             "speaker_activity_start_threshold": 0.50,
                             "speaker_activity_stop_threshold": 0.50,
@@ -628,10 +631,13 @@ async def stream_audio(
                         )
                         continue
 
-                    if audio_preprocessor is not None:
-                        await process_windows(
-                            audio_preprocessor.flush()
-                        )
+                    final_batches = await run_session_method(
+                        streaming_session.flush
+                    )
+
+                    await process_prediction_batches(
+                        final_batches
+                    )
 
                     if activity_tracker is not None:
                         for update in (
@@ -727,18 +733,6 @@ async def stream_audio(
                     )
                     continue
 
-                if audio_preprocessor is None:
-                    await websocket.send_json(
-                        {
-                            "type": "error",
-                            "message": (
-                                "The audio preprocessor was "
-                                "not initialized."
-                            ),
-                        }
-                    )
-                    continue
-
                 if len(binary_data) % 2 != 0:
                     await websocket.send_json(
                         {
@@ -756,14 +750,13 @@ async def stream_audio(
                 )
                 chunk_count += 1
 
-                windows = (
-                    audio_preprocessor.push_pcm16(
-                        binary_data
-                    )
+                batches = await run_session_method(
+                    streaming_session.push_pcm16,
+                    binary_data,
                 )
 
-                await process_windows(
-                    windows
+                await process_prediction_batches(
+                    batches
                 )
 
                 if chunk_count % 10 == 0:
@@ -815,7 +808,7 @@ async def stream_audio(
                                 3,
                             ),
                             "model_buffered_samples": (
-                                audio_preprocessor
+                                streaming_session
                                 .buffered_sample_count
                             ),
                         }

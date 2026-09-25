@@ -72,3 +72,100 @@ else
     echo "Run ./scripts/bootstrap-wsl.sh"
     exit 1
 fi
+
+echo
+echo "[Nemotron HF streaming runtime]"
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TOOLCHAIN_FILE="$REPO_ROOT/config/nemo-toolchain.conf"
+
+if [[ ! -f "$TOOLCHAIN_FILE" ]]; then
+    echo "Missing toolchain configuration: $TOOLCHAIN_FILE"
+    exit 1
+fi
+
+# shellcheck disable=SC1090
+source "$TOOLCHAIN_FILE"
+
+TRANSGO_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/transgo"
+HF_TRANSFORMERS_DIR="$TRANSGO_DATA_DIR/transformers-nemotron-main"
+HF_DEPS_DIR="$TRANSGO_DATA_DIR/transformers-nemotron-deps"
+
+if [[ ! -d "$HF_TRANSFORMERS_DIR/.git" ]]; then
+    echo "Transformers source: NOT INSTALLED"
+    echo "Run ./scripts/bootstrap-wsl.sh"
+    exit 1
+fi
+
+if [[ ! -d "$HF_DEPS_DIR/transformers" ]]; then
+    echo "HF dependency overlay: NOT INSTALLED"
+    echo "Run ./scripts/bootstrap-wsl.sh"
+    exit 1
+fi
+
+ACTUAL_HF_COMMIT="$(git -C "$HF_TRANSFORMERS_DIR" rev-parse HEAD)"
+
+echo "Expected Transformers commit: $HF_TRANSFORMERS_COMMIT"
+echo "Actual Transformers commit:   $ACTUAL_HF_COMMIT"
+
+if [[ "$ACTUAL_HF_COMMIT" != "$HF_TRANSFORMERS_COMMIT" ]]; then
+    echo "Transformers checkout does not match pinned commit."
+    exit 1
+fi
+
+PYTHONNOUSERSITE=1 \
+PYTHONPATH="$HF_DEPS_DIR" \
+"$NEMO_PYTHON" - <<'PY'
+import numpy
+import tokenizers
+import transformers
+
+from packaging.version import Version
+from transformers import (
+    AutoProcessor,
+    Nemotron3DiarizationProcessor,
+)
+
+MODEL = "nvidia/Nemotron-3-Diarization"
+
+print("NumPy:", numpy.__version__)
+print("NumPy path:", numpy.__file__)
+print("Transformers:", transformers.__version__)
+print("Transformers path:", transformers.__file__)
+print("Tokenizers:", tokenizers.__version__)
+
+if Version(numpy.__version__) >= Version("2.5"):
+    raise SystemExit(
+        "NumPy is too new for the pinned runtime."
+    )
+
+if "transformers-nemotron-deps" in numpy.__file__:
+    raise SystemExit(
+        "NumPy must come from the NeMo environment."
+    )
+
+if tokenizers.__version__ != "0.23.2":
+    raise SystemExit(
+        "Unexpected tokenizers version: "
+        + tokenizers.__version__
+    )
+
+processor = AutoProcessor.from_pretrained(
+    MODEL,
+    local_files_only=True,
+)
+
+if not isinstance(
+    processor,
+    Nemotron3DiarizationProcessor,
+):
+    raise SystemExit(
+        "Unexpected Nemotron processor type."
+    )
+
+processor.set_streaming_mode("low_latency")
+
+print("Processor:", type(processor).__name__)
+print("Streaming latency:", processor.streaming_latency_ms, "ms")
+print("HF Nemotron runtime: OK")
+PY

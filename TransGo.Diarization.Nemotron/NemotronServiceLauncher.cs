@@ -17,6 +17,10 @@ public sealed class NemotronServiceLauncher
         "NEMO_PYTHON=\"${XDG_DATA_HOME:-$HOME/.local/share}" +
         "/transgo/nemo-speech/.venv/bin/python\"";
 
+    private const string HfDependenciesSetup =
+        "HF_DEPS=\"${XDG_DATA_HOME:-$HOME/.local/share}" +
+        "/transgo/transformers-nemotron-deps\"";
+
     private static readonly TimeSpan StartupTimeout =
         TimeSpan.FromSeconds(90);
 
@@ -87,7 +91,11 @@ public sealed class NemotronServiceLauncher
 
         string linuxServiceCommand =
             $"{NemoPythonSetup} " +
+            $"&& {HfDependenciesSetup} " +
             "&& test -x \"$NEMO_PYTHON\" " +
+            "&& test -d \"$HF_DEPS/transformers\" " +
+            "&& export PYTHONNOUSERSITE=1 " +
+            "&& export PYTHONPATH=\"$HF_DEPS\" " +
             $"&& cd {WslRuntime.QuoteShellArgument(repositoryDirectory)} " +
             "&& exec \"$NEMO_PYTHON\" " +
             "-m uvicorn nemotron_service:app " +
