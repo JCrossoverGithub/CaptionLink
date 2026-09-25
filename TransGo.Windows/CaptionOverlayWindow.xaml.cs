@@ -1,11 +1,29 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace TransGo.Windows;
 
 public partial class CaptionOverlayWindow : Window
 {
+    private static readonly Brush[] SpeakerBrushes =
+    [
+        new SolidColorBrush(Color.FromRgb(125, 211, 252)),
+        new SolidColorBrush(Color.FromRgb(252, 211, 77)),
+        new SolidColorBrush(Color.FromRgb(134, 239, 172)),
+        new SolidColorBrush(Color.FromRgb(196, 181, 253)),
+        new SolidColorBrush(Color.FromRgb(253, 164, 175)),
+        new SolidColorBrush(Color.FromRgb(253, 186, 116)),
+        new SolidColorBrush(Color.FromRgb(94, 234, 212)),
+        new SolidColorBrush(Color.FromRgb(147, 197, 253)),
+    ];
+
+    private static readonly Brush OverlapSeparatorBrush =
+        new SolidColorBrush(
+            Color.FromRgb(170, 182, 202));
+
     public CaptionOverlayWindow()
     {
         InitializeComponent();
@@ -22,10 +40,13 @@ public partial class CaptionOverlayWindow : Window
             !string.IsNullOrWhiteSpace(
                 speakerLabel);
 
-        SpeakerLabelText.Text =
-            hasSpeakerLabel
-                ? speakerLabel!.Trim()
-                : string.Empty;
+        SpeakerLabelText.Inlines.Clear();
+
+        if (hasSpeakerLabel)
+        {
+            AddSpeakerLabelInlines(
+                speakerLabel!);
+        }
 
         SpeakerLabelText.Visibility =
             hasSpeakerLabel
@@ -47,8 +68,7 @@ public partial class CaptionOverlayWindow : Window
 
     public void ResetCaption()
     {
-        SpeakerLabelText.Text =
-            string.Empty;
+        SpeakerLabelText.Inlines.Clear();
 
         SpeakerLabelText.Visibility =
             Visibility.Collapsed;
@@ -57,6 +77,67 @@ public partial class CaptionOverlayWindow : Window
             "Listening for speech...";
 
         CaptionPanel.Opacity = 1.0;
+    }
+
+    private void AddSpeakerLabelInlines(
+        string speakerLabel)
+    {
+        string[] labels =
+            speakerLabel.Split(
+                " + ",
+                StringSplitOptions
+                    .RemoveEmptyEntries |
+                StringSplitOptions
+                    .TrimEntries);
+
+        for (int index = 0; index < labels.Length; index++)
+        {
+            if (index > 0)
+            {
+                SpeakerLabelText.Inlines.Add(
+                    new Run(" + ")
+                    {
+                        Foreground =
+                            OverlapSeparatorBrush,
+                    });
+            }
+
+            SpeakerLabelText.Inlines.Add(
+                new Run(labels[index])
+                {
+                    Foreground =
+                        GetSpeakerBrush(
+                            labels[index]),
+                });
+        }
+    }
+
+    private static Brush GetSpeakerBrush(
+        string speakerLabel)
+    {
+        const string prefix =
+            "Speaker ";
+
+        if (
+            speakerLabel.StartsWith(
+                prefix,
+                StringComparison.OrdinalIgnoreCase)
+            &&
+            int.TryParse(
+                speakerLabel[prefix.Length..],
+                out int speakerNumber)
+            &&
+            speakerNumber > 0)
+        {
+            int paletteIndex =
+                (speakerNumber - 1) %
+                SpeakerBrushes.Length;
+
+            return SpeakerBrushes[
+                paletteIndex];
+        }
+
+        return OverlapSeparatorBrush;
     }
 
     private void CaptionOverlayWindow_Loaded(
