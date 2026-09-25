@@ -7,6 +7,8 @@ using System.Text.Json;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Media;
 using TransGo.Audio.Processing;
 using TransGo.Audio.Windows;
 using TransGo.Core.Audio;
@@ -36,6 +38,26 @@ public partial class MainWindow : Window
     private IDiarizationEngine? _diarizationEngine;
 
     private string _finalTranscript = string.Empty;
+
+    private readonly List<TranscriptDisplayEntry>
+        _finalTranscriptEntries = new();
+
+    private static readonly Brush[] TranscriptSpeakerBrushes =
+    [
+        new SolidColorBrush(Color.FromRgb(125, 211, 252)),
+        new SolidColorBrush(Color.FromRgb(252, 211, 77)),
+        new SolidColorBrush(Color.FromRgb(134, 239, 172)),
+        new SolidColorBrush(Color.FromRgb(196, 181, 253)),
+        new SolidColorBrush(Color.FromRgb(253, 164, 175)),
+        new SolidColorBrush(Color.FromRgb(253, 186, 116)),
+        new SolidColorBrush(Color.FromRgb(94, 234, 212)),
+        new SolidColorBrush(Color.FromRgb(147, 197, 253)),
+    ];
+
+    private static readonly Brush
+        TranscriptOverlapSeparatorBrush =
+            new SolidColorBrush(
+                Color.FromRgb(170, 182, 202));
 
     private readonly ParakeetServiceLauncher
     _parakeetPreloader = new();
@@ -522,8 +544,11 @@ public partial class MainWindow : Window
             _finalTranscript =
                 string.Empty;
 
-            TranscriptText.Text =
-                "Listening for speech…";
+            _finalTranscriptEntries.Clear();
+
+            TranscriptText.Inlines.Clear();
+            TranscriptText.Inlines.Add(
+                new Run("Listening for speech…"));
 
             _captionOverlay.ResetCaption();
 
@@ -1079,6 +1104,11 @@ public partial class MainWindow : Window
 
         _ = Dispatcher.BeginInvoke(new Action(() =>
         {
+            TranscriptDisplayEntry currentEntry =
+                new(
+                    Text: result.Text,
+                    SpeakerLabel: speakerLabel);
+
             if (result.IsFinal)
             {
                 if (!string.IsNullOrWhiteSpace(
@@ -1093,37 +1123,20 @@ public partial class MainWindow : Window
                 _finalTranscript +=
                     displayText;
 
+                _finalTranscriptEntries.Add(
+                    currentEntry);
+
                 /*
-                 * The main window keeps complete finalized
-                 * transcript history.
+                 * Finalized entries remain in the transcript
+                 * history. Interim text is rendered separately
+                 * so recognition revisions can replace it.
                  */
-                TranscriptText.Text =
-                    _finalTranscript;
+                RenderTranscript();
             }
             else
             {
-                /*
-                 * Interim text is temporary and may be replaced
-                 * by the recognition engine.
-                 */
-                if (string.IsNullOrWhiteSpace(
-                        _finalTranscript))
-                {
-                    TranscriptText.Text =
-                        displayText;
-                }
-                else
-                {
-                    string separator =
-                        result.SpeakerId is null
-                            ? " "
-                            : Environment.NewLine;
-
-                    TranscriptText.Text =
-                        _finalTranscript +
-                        separator +
-                        displayText;
-                }
+                RenderTranscript(
+                    currentEntry);
             }
 
             /*
@@ -1136,6 +1149,147 @@ public partial class MainWindow : Window
                 result.IsFinal);
         }));
     }
+
+    private void RenderTranscript(
+        TranscriptDisplayEntry? interimEntry = null)
+    {
+        TranscriptText.Inlines.Clear();
+
+        bool hasPreviousEntry = false;
+
+        foreach (
+            TranscriptDisplayEntry entry
+            in _finalTranscriptEntries)
+        {
+            AddTranscriptEntry(
+                entry,
+                hasPreviousEntry);
+
+            hasPreviousEntry = true;
+        }
+
+        if (interimEntry is not null)
+        {
+            AddTranscriptEntry(
+                interimEntry,
+                hasPreviousEntry);
+        }
+
+        if (
+            _finalTranscriptEntries.Count == 0
+            && interimEntry is null)
+        {
+            TranscriptText.Inlines.Add(
+                new Run("Listening for speech…"));
+        }
+    }
+
+    private void AddTranscriptEntry(
+        TranscriptDisplayEntry entry,
+        bool hasPreviousEntry)
+    {
+        bool hasSpeaker =
+            !string.IsNullOrWhiteSpace(
+                entry.SpeakerLabel);
+
+        if (hasPreviousEntry)
+        {
+            TranscriptText.Inlines.Add(
+                hasSpeaker
+                    ? new LineBreak()
+                    : new Run(" "));
+        }
+
+        if (hasSpeaker)
+        {
+            AddTranscriptSpeakerLabel(
+                entry.SpeakerLabel!);
+
+            TranscriptText.Inlines.Add(
+                new Run(": ")
+                {
+                    Foreground = Brushes.White,
+                });
+        }
+
+        TranscriptText.Inlines.Add(
+            new Run(entry.Text)
+            {
+                Foreground = Brushes.White,
+            });
+    }
+
+    private void AddTranscriptSpeakerLabel(
+        string speakerLabel)
+    {
+        string[] labels =
+            speakerLabel.Split(
+                " + ",
+                StringSplitOptions
+                    .RemoveEmptyEntries |
+                StringSplitOptions
+                    .TrimEntries);
+
+        for (
+            int index = 0;
+            index < labels.Length;
+            index++)
+        {
+            if (index > 0)
+            {
+                TranscriptText.Inlines.Add(
+                    new Run(" + ")
+                    {
+                        Foreground =
+                            TranscriptOverlapSeparatorBrush,
+                        FontWeight =
+                            FontWeights.SemiBold,
+                    });
+            }
+
+            TranscriptText.Inlines.Add(
+                new Run(labels[index])
+                {
+                    Foreground =
+                        GetTranscriptSpeakerBrush(
+                            labels[index]),
+                    FontWeight =
+                        FontWeights.SemiBold,
+                });
+        }
+    }
+
+    private static Brush GetTranscriptSpeakerBrush(
+        string speakerLabel)
+    {
+        const string prefix =
+            "Speaker ";
+
+        if (
+            speakerLabel.StartsWith(
+                prefix,
+                StringComparison.OrdinalIgnoreCase)
+            &&
+            int.TryParse(
+                speakerLabel[prefix.Length..],
+                out int speakerNumber)
+            &&
+            speakerNumber > 0)
+        {
+            int paletteIndex =
+                (speakerNumber - 1)
+                % TranscriptSpeakerBrushes.Length;
+
+            return TranscriptSpeakerBrushes[
+                paletteIndex];
+        }
+
+        return TranscriptOverlapSeparatorBrush;
+    }
+
+    private sealed record TranscriptDisplayEntry(
+        string Text,
+        string? SpeakerLabel);
 
     private static string GetTranscriptDisplayText(
     TranscriptResult result)
