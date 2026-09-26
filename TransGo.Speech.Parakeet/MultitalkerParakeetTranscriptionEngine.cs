@@ -25,12 +25,6 @@ public sealed class MultitalkerParakeetTranscriptionEngine
     private bool _isRunning;
     private bool _disposed;
 
-    public MultitalkerParakeetTranscriptionEngine()
-        : this(
-            new MultitalkerParakeetServiceLauncher())
-    {
-    }
-
     public MultitalkerParakeetTranscriptionEngine(
         IMultitalkerParakeetServiceLauncher serviceLauncher)
     {

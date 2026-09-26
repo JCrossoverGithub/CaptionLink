@@ -24,12 +24,6 @@ public sealed class SortformerDiarizationEngine
     private bool _isRunning;
     private bool _disposed;
 
-    public SortformerDiarizationEngine()
-        : this(
-            new SortformerServiceLauncher())
-    {
-    }
-
     public SortformerDiarizationEngine(
         ISortformerServiceLauncher serviceLauncher)
     {

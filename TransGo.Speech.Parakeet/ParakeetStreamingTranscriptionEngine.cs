@@ -42,15 +42,6 @@ public sealed class ParakeetStreamingTranscriptionEngine
     }
 
     public ParakeetStreamingTranscriptionEngine(
-        ParakeetStreamingProfile streamingProfile =
-            ParakeetStreamingProfile.Accurate)
-        : this(
-            streamingProfile,
-            new ParakeetServiceLauncher())
-    {
-    }
-
-    public ParakeetStreamingTranscriptionEngine(
         ParakeetStreamingProfile streamingProfile,
         IParakeetServiceLauncher serviceLauncher)
     {

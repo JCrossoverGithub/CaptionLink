@@ -24,12 +24,6 @@ public sealed class NemotronDiarizationEngine
     private bool _isRunning;
     private bool _disposed;
 
-    public NemotronDiarizationEngine()
-        : this(
-            new NemotronServiceLauncher())
-    {
-    }
-
     public NemotronDiarizationEngine(
         INemotronServiceLauncher serviceLauncher)
     {
