@@ -33,8 +33,23 @@ public sealed class NemotronServiceLauncher
     private readonly NemotronServiceHealthClient
         _healthClient = new();
 
+    private readonly ILocalServiceRuntime _runtime;
+
     private Process? _serviceProcess;
     private bool _disposed;
+
+    public NemotronServiceLauncher()
+        : this(new WslLocalServiceRuntime())
+    {
+    }
+
+    public NemotronServiceLauncher(
+        ILocalServiceRuntime runtime)
+    {
+        ArgumentNullException.ThrowIfNull(runtime);
+
+        _runtime = runtime;
+    }
 
     public async Task<NemotronServiceHealth>
         EnsureReadyAsync(
@@ -83,10 +98,10 @@ public sealed class NemotronServiceLauncher
         }
     }
 
-    private static Process StartServiceProcess()
+    private Process StartServiceProcess()
     {
         string repositoryDirectory =
-            WslRuntime.GetLinuxRepositoryDirectory(
+            _runtime.GetRepositoryDirectory(
                 ServiceDirectoryName);
 
         string linuxServiceCommand =
@@ -103,7 +118,7 @@ public sealed class NemotronServiceLauncher
             "--port 8767";
 
         ProcessStartInfo startInfo =
-            CreateWslStartInfo(
+            CreateServiceStartInfo(
                 linuxServiceCommand,
                 redirectOutput: true);
 
@@ -182,12 +197,12 @@ public sealed class NemotronServiceLauncher
             $"{StartupTimeout.TotalSeconds:0} seconds.");
     }
 
-    private static ProcessStartInfo CreateWslStartInfo(
-        string linuxCommand,
+    private ProcessStartInfo CreateServiceStartInfo(
+        string command,
         bool redirectOutput)
     {
-        return WslRuntime.CreateStartInfo(
-            linuxCommand,
+        return _runtime.CreateShellStartInfo(
+            command,
             redirectOutput);
     }
 
