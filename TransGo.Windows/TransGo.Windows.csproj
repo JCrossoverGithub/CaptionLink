@@ -19,6 +19,7 @@
     <ProjectReference Include="..\TransGo.Diarization.Simulated\TransGo.Diarization.Simulated.csproj" />
     <ProjectReference Include="..\TransGo.Diarization.Sortformer\TransGo.Diarization.Sortformer.csproj" />
     <ProjectReference Include="..\TransGo.Diarization.Nemotron\TransGo.Diarization.Nemotron.csproj" />
+    <ProjectReference Include="..\TransGo.Application\TransGo.Application.csproj" />
   </ItemGroup>
 
 </Project>
