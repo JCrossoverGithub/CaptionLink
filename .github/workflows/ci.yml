@@ -38,8 +38,8 @@ jobs:
       - name: Run overlap benchmark tests
         run: dotnet run --project TransGo.OverlapBenchmark.Tests/TransGo.OverlapBenchmark.Tests.csproj --configuration Release --no-build
 
-      - name: Run remote protocol and latency tests
-        run: dotnet test TransGo.Remote.Protocol.Tests/TransGo.Remote.Protocol.Tests.csproj --configuration Release --no-build
+      - name: Run .NET tests
+        run: dotnet test TransGo.Desktop.slnx --configuration Release --no-build
 
       - name: Run Chrome extension tests
         run: node --test TransGo.ChromeExtension/tests/protocol.test.mjs TransGo.ChromeExtension/tests/latency.test.mjs TransGo.ChromeExtension/tests/caption-state.test.mjs
