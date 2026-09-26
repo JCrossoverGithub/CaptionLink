@@ -13,6 +13,7 @@ using TransGo.Audio.Processing;
 using TransGo.Audio.Windows;
 using TransGo.Core.Audio;
 using TransGo.Core.Transcription;
+using TransGo.Core.Runtime;
 using TransGo.Speech.Google;
 using TransGo.Speech.Sherpa;
 using TransGo.Speech.Parakeet;
@@ -64,8 +65,13 @@ public partial class MainWindow : Window
             new SolidColorBrush(
                 Color.FromRgb(170, 182, 202));
 
+    private static readonly ILocalServiceRuntime
+        LocalServiceRuntime =
+            new WslLocalServiceRuntime();
+
     private readonly ParakeetServiceLauncher
-    _parakeetPreloader = new();
+        _parakeetPreloader =
+            new(LocalServiceRuntime);
 
     private readonly CancellationTokenSource
         _windowCancellation = new();
@@ -261,11 +267,11 @@ public partial class MainWindow : Window
 
             "sortformer" =>
                 new SortformerDiarizationEngine(
-                    new SortformerServiceLauncher()),
+                    new SortformerServiceLauncher(LocalServiceRuntime)),
 
             "nemotron" =>
                 new NemotronDiarizationEngine(
-                    new NemotronServiceLauncher()),
+                    new NemotronServiceLauncher(LocalServiceRuntime)),
 
             _ => null,
         };
@@ -485,11 +491,11 @@ public partial class MainWindow : Window
             "parakeet" =>
                 new ParakeetStreamingTranscriptionEngine(
                     GetSelectedParakeetProfile(),
-                    new ParakeetServiceLauncher()),
+                    new ParakeetServiceLauncher(LocalServiceRuntime)),
 
             "multitalker-parakeet" =>
                 new MultitalkerParakeetTranscriptionEngine(
-                    new MultitalkerParakeetServiceLauncher()),
+                    new MultitalkerParakeetServiceLauncher(LocalServiceRuntime)),
 
             "remote" =>
                 new RemoteTranscriptionEngine(),
