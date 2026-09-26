@@ -481,7 +481,7 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# TransGo local secrets
+# CaptionLink local secrets
 .env
 *.env
 appsettings.Development.json
@@ -489,11 +489,11 @@ credentials*.json
 service-account*.json
 
 # Speech benchmark datasets and temporary files
-TransGo.Benchmarks/audio/
-TransGo.Benchmarks/results/raw/
-TransGo.Benchmarks/.venv/
+CaptionLink.Benchmarks/audio/
+CaptionLink.Benchmarks/results/raw/
+CaptionLink.Benchmarks/.venv/
 
-TransGo.LocalDiarization.Sortformer/diagnostics/
+CaptionLink.LocalDiarization.Sortformer/diagnostics/
 
 # VoxConverse overlap benchmark inputs and generated reports
 benchmark-data/

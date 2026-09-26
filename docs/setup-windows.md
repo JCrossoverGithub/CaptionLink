@@ -1,6 +1,6 @@
 ﻿# Windows development setup
 
-This guide covers the current Windows development environment for TransGo, including the local NVIDIA GPU services that run through WSL.
+This guide covers the current Windows development environment for CaptionLink, including the local NVIDIA GPU services that run through WSL.
 
 ## Requirements
 
@@ -20,8 +20,8 @@ The GPU Python stack is installed by the repository bootstrap script rather than
 ## 1. Clone the repository
 
 ~~~powershell
-git clone https://github.com/JCrossoverGithub/TransGo-Desktop.git
-cd TransGo-Desktop
+git clone https://github.com/JCrossoverGithub/CaptionLink.git
+cd CaptionLink
 ~~~
 
 During private development, clone using whatever GitHub authentication method your account requires.
@@ -45,7 +45,7 @@ The doctor checks:
 - Python
 - `uv`
 - `ffmpeg`
-- the installed TransGo NeMo environment
+- the installed CaptionLink NeMo environment
 - the Nemotron 3 Transformers overlay
 
 Before the model runtime has been bootstrapped, the final checks are expected to report that the environment is not installed.
@@ -66,11 +66,11 @@ config/nemo-toolchain.conf
 
 It then:
 
-1. creates the TransGo data directory,
+1. creates the CaptionLink data directory,
 2. clones NVIDIA NeMo Speech,
 3. checks out the pinned NeMo commit,
 4. creates and synchronizes the pinned Python/CUDA environment with `uv`,
-5. installs TransGo's FastAPI/Uvicorn/WebSocket service dependencies,
+5. installs CaptionLink's FastAPI/Uvicorn/WebSocket service dependencies,
 6. checks out the pinned Hugging Face Transformers revision,
 7. builds the dependency overlay used by the Nemotron 3 streaming implementation,
 8. verifies package versions,
@@ -91,7 +91,7 @@ The main Python environment is therefore normally:
 ~/.local/share/transgo/nemo-speech/.venv/
 ~~~
 
-The bootstrap is intentionally separate from the repository clone. Large third-party repositories, environments, model caches, and generated data are not committed to TransGo.
+The bootstrap is intentionally separate from the repository clone. Large third-party repositories, environments, model caches, and generated data are not committed to CaptionLink.
 
 ## 4. Re-run the doctor
 
@@ -103,13 +103,13 @@ After bootstrap:
 
 The WSL runtime checks should now complete successfully.
 
-## 5. Restore and build TransGo
+## 5. Restore and build CaptionLink
 
 ~~~powershell
-dotnet restore .\TransGo.Desktop.slnx
+dotnet restore .\CaptionLink.slnx
 
 dotnet build `
-  .\TransGo.Desktop.slnx `
+  .\CaptionLink.slnx `
   -c Release
 ~~~
 
@@ -117,7 +117,7 @@ dotnet build `
 
 ~~~powershell
 dotnet test `
-  .\TransGo.Desktop.slnx `
+  .\CaptionLink.slnx `
   -c Release `
   --no-build
 ~~~
@@ -128,11 +128,11 @@ Some benchmark and integration-style validation tools are separate executable pr
 
 ~~~powershell
 dotnet run `
-  --project .\TransGo.Windows\TransGo.Windows.csproj `
+  --project .\CaptionLink.Windows\CaptionLink.Windows.csproj `
   -c Release
 ~~~
 
-TransGo starts the required local GPU service when a corresponding provider is selected.
+CaptionLink starts the required local GPU service when a corresponding provider is selected.
 
 Current localhost service ports are:
 
@@ -150,13 +150,13 @@ The launchers expect the runtime created by `bootstrap-wsl.sh`.
 The Windows WSL runtime attempts to locate the repository by searching upward from the current working directory and application base directory for:
 
 ~~~text
-TransGo.Desktop.slnx
+CaptionLink.slnx
 ~~~
 
-If TransGo is launched from somewhere that prevents automatic discovery, set the Windows environment variable:
+If CaptionLink is launched from somewhere that prevents automatic discovery, set the Windows environment variable:
 
 ~~~text
-TRANSGO_REPOSITORY_ROOT
+CAPTIONLINK_REPOSITORY_ROOT
 ~~~
 
 to the repository root.
@@ -164,11 +164,11 @@ to the repository root.
 Example:
 
 ~~~powershell
-$env:TRANSGO_REPOSITORY_ROOT =
-    "C:\Users\you\projects\TransGo-Desktop"
+$env:CAPTIONLINK_REPOSITORY_ROOT =
+    "C:\Users\you\projects\CaptionLink"
 ~~~
 
-No WSL distribution name is hard-coded. TransGo uses the user's default WSL distribution.
+No WSL distribution name is hard-coded. CaptionLink uses the user's default WSL distribution.
 
 ## Local GPU runtime locations
 
@@ -197,19 +197,19 @@ ${XDG_DATA_HOME:-$HOME/.local/share}/transgo/transformers-nemotron-deps
 Running the remote GPU gateway requires:
 
 ~~~text
-TRANSGO_GATEWAY_TOKEN
+CAPTIONLINK_GATEWAY_TOKEN
 ~~~
 
-Remote TransGo clients use:
+Remote CaptionLink clients use:
 
 ~~~text
-TRANSGO_REMOTE_GATEWAY_URL
-TRANSGO_REMOTE_GATEWAY_TOKEN
+CAPTIONLINK_REMOTE_GATEWAY_URL
+CAPTIONLINK_REMOTE_GATEWAY_TOKEN
 ~~~
 
 Keep real credentials outside source control.
 
-See [the remote-session protocol](../TransGo.Remote.Protocol/PROTOCOL.md) for protocol details.
+See [the remote-session protocol](../CaptionLink.Remote.Protocol/PROTOCOL.md) for protocol details.
 
 ## Troubleshooting
 
@@ -225,6 +225,6 @@ If the local GPU environment is missing or inconsistent, rerun:
 wsl bash ./scripts/bootstrap-wsl.sh
 ~~~
 
-If the repository cannot be located by a service launcher, set `TRANSGO_REPOSITORY_ROOT`.
+If the repository cannot be located by a service launcher, set `CAPTIONLINK_REPOSITORY_ROOT`.
 
-If CUDA is not visible inside WSL, resolve the Windows/WSL NVIDIA configuration before debugging the TransGo services themselves.
+If CUDA is not visible inside WSL, resolve the Windows/WSL NVIDIA configuration before debugging the CaptionLink services themselves.

@@ -1,6 +1,6 @@
 # VoxConverse overlap benchmark
 
-This benchmark measures TransGo's production `SpeakerOverlapDetector` against VoxConverse v0.3 reference annotations. It streams each WAV through the same local Sortformer service and C# activity path used by the WPF application.
+This benchmark measures CaptionLink's production `SpeakerOverlapDetector` against VoxConverse v0.3 reference annotations. It streams each WAV through the same local Sortformer service and C# activity path used by the WPF application.
 
 VoxConverse is research data distributed under CC BY 4.0. The download script fetches the audio and annotations from the official project; no dataset files belong in this repository.
 
@@ -23,11 +23,11 @@ Use only the development set while selecting thresholds. Do not inspect or tune 
 
 ## 2. Run a small accelerated smoke test
 
-Close TransGo before starting because the Sortformer service accepts one session at a time.
+Close CaptionLink before starting because the Sortformer service accepts one session at a time.
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapBenchmark\TransGo.OverlapBenchmark.csproj `
+  --project .\CaptionLink.OverlapBenchmark\CaptionLink.OverlapBenchmark.csproj `
   --configuration Release `
   -- `
   --audio-dir .\benchmark-data\VoxConverse\audio\dev `
@@ -42,7 +42,7 @@ The first run may take up to 90 seconds to load Sortformer. The benchmark proces
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapBenchmark\TransGo.OverlapBenchmark.csproj `
+  --project .\CaptionLink.OverlapBenchmark\CaptionLink.OverlapBenchmark.csproj `
   --configuration Release `
   -- `
   --audio-dir .\benchmark-data\VoxConverse\audio\dev `
@@ -62,7 +62,7 @@ or any recording fails, rerun the same command with `--resume`:
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapBenchmark\TransGo.OverlapBenchmark.csproj `
+  --project .\CaptionLink.OverlapBenchmark\CaptionLink.OverlapBenchmark.csproj `
   --configuration Release `
   --no-build `
   -- `
@@ -93,7 +93,7 @@ Accelerated input can queue audio ahead of GPU inference and invalidate a 30-sec
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapBenchmark\TransGo.OverlapBenchmark.csproj `
+  --project .\CaptionLink.OverlapBenchmark\CaptionLink.OverlapBenchmark.csproj `
   --configuration Release `
   -- `
   --audio-dir .\benchmark-data\VoxConverse\audio\dev `
@@ -119,7 +119,7 @@ once more with `--trace-dir`. The GPU is required for this capture pass.
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapBenchmark\TransGo.OverlapBenchmark.csproj `
+  --project .\CaptionLink.OverlapBenchmark\CaptionLink.OverlapBenchmark.csproj `
   --configuration Release `
   -- `
   --audio-dir .\benchmark-data\VoxConverse\audio\dev `
@@ -135,7 +135,7 @@ capture, the first capture pass will rerun those recordings. Each successful
 recording produces one atomic, gzip-compressed file named
 `<recording-id>.sortformer-trace.json.gz`.
 
-Normal TransGo and benchmark sessions do not publish raw probabilities unless
+Normal CaptionLink and benchmark sessions do not publish raw probabilities unless
 `--trace-dir` is present, so production sessions avoid the extra serialization
 and WebSocket traffic.
 
@@ -143,7 +143,7 @@ and WebSocket traffic.
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapTuner\TransGo.OverlapTuner.csproj `
+  --project .\CaptionLink.OverlapTuner\CaptionLink.OverlapTuner.csproj `
   --configuration Release `
   -- `
   --trace-dir .\benchmark-traces\voxconverse-dev-v2.1 `
@@ -219,7 +219,7 @@ Capture raw test-set probabilities. This is the only GPU pass:
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapBenchmark\TransGo.OverlapBenchmark.csproj `
+  --project .\CaptionLink.OverlapBenchmark\CaptionLink.OverlapBenchmark.csproj `
   --configuration Release `
   --no-build `
   -- `
@@ -234,7 +234,7 @@ recording has a trace, perform the locked CPU comparison:
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapTuner\TransGo.OverlapTuner.csproj `
+  --project .\CaptionLink.OverlapTuner\CaptionLink.OverlapTuner.csproj `
   --configuration Release `
   --no-build `
   -- `

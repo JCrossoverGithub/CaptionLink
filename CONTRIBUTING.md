@@ -1,8 +1,8 @@
-﻿# Contributing to TransGo
+﻿# Contributing to CaptionLink
 
-Thanks for your interest in TransGo.
+Thanks for your interest in CaptionLink.
 
-TransGo is under active development, particularly around reusable caption-session orchestration, local GPU speech services, and future cross-platform support.
+CaptionLink is under active development, particularly around reusable caption-session orchestration, local GPU speech services, and future cross-platform support.
 
 ## Development setup
 
@@ -11,7 +11,7 @@ The current primary development environment is Windows with WSL and an NVIDIA GP
 Start with:
 
 - [Windows development setup](docs/setup-windows.md)
-- [Remote-session protocol](TransGo.Remote.Protocol/PROTOCOL.md)
+- [Remote-session protocol](CaptionLink.Remote.Protocol/PROTOCOL.md)
 - [End-to-end caption latency](docs/end-to-end-latency.md)
 - [VoxConverse overlap benchmark](docs/overlap-benchmark.md)
 
@@ -19,7 +19,7 @@ Start with:
 
 Create a branch from the current development base and keep changes focused.
 
-TransGo favors small, reviewable commits that preserve boundaries between:
+CaptionLink favors small, reviewable commits that preserve boundaries between:
 
 - platform-neutral application/core code,
 - platform-specific UI and audio capture,
@@ -35,10 +35,10 @@ Avoid introducing Windows, WSL, WPF, WASAPI, or provider-specific assumptions in
 From the repository root:
 
 ~~~powershell
-dotnet restore .\TransGo.Desktop.slnx
+dotnet restore .\CaptionLink.slnx
 
 dotnet build `
-  .\TransGo.Desktop.slnx `
+  .\CaptionLink.slnx `
   -c Release
 ~~~
 
@@ -48,7 +48,7 @@ Run the standard .NET test suite:
 
 ~~~powershell
 dotnet test `
-  .\TransGo.Desktop.slnx `
+  .\CaptionLink.slnx `
   -c Release `
   --no-build
 ~~~
@@ -112,7 +112,7 @@ For platform-specific work, keep the platform boundary explicit rather than addi
 
 Bug reports are most useful when they include:
 
-- TransGo version or commit,
+- CaptionLink version or commit,
 - operating system,
 - relevant provider or model,
 - whether transcription is local or remote,
