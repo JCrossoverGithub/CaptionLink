@@ -1,3 +1,4 @@
+using TransGo.Core.Runtime;
 using TransGo.Diarization.Nemotron;
 using TransGo.Diarization.Sortformer;
 
@@ -35,16 +36,23 @@ internal static class Program
             Directory.CreateDirectory(
                 options.OutputDirectory);
 
+            ILocalServiceRuntime localServiceRuntime =
+                new WslLocalServiceRuntime();
+
             var runner =
                 new VoxConverseBenchmarkRunner(
                     options,
                     backend => backend switch
                     {
                         DiarizationBackend.Sortformer =>
-                            new SortformerDiarizationEngine(),
+                            new SortformerDiarizationEngine(
+                                new SortformerServiceLauncher(
+                                    localServiceRuntime)),
 
                         DiarizationBackend.Nemotron =>
-                            new NemotronDiarizationEngine(),
+                            new NemotronDiarizationEngine(
+                                new NemotronServiceLauncher(
+                                    localServiceRuntime)),
 
                         _ => throw new InvalidOperationException(
                             $"Unsupported diarization engine: " +

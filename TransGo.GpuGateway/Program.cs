@@ -1,6 +1,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using TransGo.Core.Runtime;
 using TransGo.GpuGateway;
 using TransGo.Remote.Protocol;
 using TransGo.Speech.Parakeet;
@@ -20,6 +21,9 @@ if (string.IsNullOrWhiteSpace(gatewayToken))
 }
 
 var app = builder.Build();
+
+ILocalServiceRuntime localServiceRuntime =
+    new WslLocalServiceRuntime();
 
 const string BrowserWebSocketSubprotocol =
     "transgo-v1";
@@ -92,7 +96,10 @@ app.MapGet(
 
         await TranscriptionWebSocketSession.RunAsync(
             socket,
-            () => new ParakeetStreamingTranscriptionEngine(),
+            () => new ParakeetStreamingTranscriptionEngine(
+                ParakeetStreamingProfile.Accurate,
+                new ParakeetServiceLauncher(
+                    localServiceRuntime)),
             context.RequestAborted);
     });
 
