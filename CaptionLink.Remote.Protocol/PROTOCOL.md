@@ -1,8 +1,8 @@
-# TransGo Remote-Session Protocol v1
+# CaptionLink Remote-Session Protocol v1
 
 ## Purpose
 
-This protocol allows a TransGo client to stream captured audio to a remote
+This protocol allows a CaptionLink client to stream captured audio to a remote
 GPU gateway and receive real-time transcription results.
 
 ## Transport
@@ -80,7 +80,7 @@ Sent by the client as its first WebSocket message.
   "protocolVersion": 1,
   "requestId": "request-001",
   "client": {
-    "name": "TransGo Test Client",
+    "name": "CaptionLink Test Client",
     "version": "1.0.0",
     "platform": "Windows"
   },

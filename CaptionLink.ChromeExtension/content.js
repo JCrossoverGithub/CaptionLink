@@ -1,4 +1,4 @@
-(function initializeTransGoOverlay() {
+(function initializeCaptionLinkOverlay() {
   "use strict";
 
   if (globalThis.__transGoOverlayLoaded) {
@@ -7,8 +7,8 @@
 
   globalThis.__transGoOverlayLoaded = true;
 
-  const latency = globalThis.TransGoLatency;
-  const captionState = globalThis.TransGoCaptionState;
+  const latency = globalThis.CaptionLinkLatency;
+  const captionState = globalThis.CaptionLinkCaptionState;
 
   document.getElementById("transgo-caption-host")?.remove();
 
@@ -120,7 +120,7 @@
       latency.nowMilliseconds());
 
     if (sample) {
-      console.debug("TransGo caption latency", sample);
+      console.debug("CaptionLink caption latency", sample);
 
       void chrome.runtime.sendMessage({
         target: "offscreen",

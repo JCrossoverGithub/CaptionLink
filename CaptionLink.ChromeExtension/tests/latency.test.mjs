@@ -8,7 +8,7 @@ globalThis.performance = {
 
 await import("../latency.js");
 
-const latency = globalThis.TransGoLatency;
+const latency = globalThis.CaptionLinkLatency;
 
 test("decorates a caption with same-device receive latency", () => {
   const caption = latency.decorateReceivedCaption(

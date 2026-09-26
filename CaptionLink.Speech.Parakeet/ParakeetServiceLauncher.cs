@@ -395,7 +395,7 @@ public sealed class ParakeetServiceLauncher
         _disposed = true;
 
         /*
-         * Do not terminate a healthy model when TransGo closes.
+         * Do not terminate a healthy model when CaptionLink closes.
          * Keeping it alive makes the next launch much faster.
          */
         DisposeServiceProcess();

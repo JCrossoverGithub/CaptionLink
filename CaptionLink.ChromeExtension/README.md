@@ -1,8 +1,8 @@
-# TransGo Chrome extension prototype
+# CaptionLink Chrome extension prototype
 
 This Manifest V3 extension captures audio from the user-selected active tab,
 keeps that audio playing normally, resamples it to 16 kHz mono PCM, and sends
-100 ms chunks to the existing TransGo GPU gateway. Interim and final captions
+100 ms chunks to the existing CaptionLink GPU gateway. Interim and final captions
 are composed by segment, rendered over the page, and move into the active
 fullscreen element. Interim updates are rate-limited so corrections do not
 make the overlay flicker between finalized and partial text.

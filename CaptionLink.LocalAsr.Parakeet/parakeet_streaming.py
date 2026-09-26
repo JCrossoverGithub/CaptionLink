@@ -167,7 +167,7 @@ def apply_nemo_decoder_length_guard(pipeline):
 
             if lengths_changed:
                 print(
-                    "Applied TransGo NeMo "
+                    "Applied CaptionLink NeMo "
                     "decoder-length guard: "
                     f"encoder_time={max_encoder_time}, "
                     f"original_total={enc_lens.tolist()}, "

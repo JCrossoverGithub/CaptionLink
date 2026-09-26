@@ -7,7 +7,7 @@ string localAppData =
 string waveFilePath =
     Path.Combine(
         localAppData,
-        "TransGo",
+        "CaptionLink",
         "Models",
         "sherpa-onnx-whisper-turbo",
         "test_wavs",

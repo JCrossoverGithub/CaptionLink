@@ -279,7 +279,7 @@ internal sealed class NemotronServiceClient
                 {
                     await socket.CloseOutputAsync(
                         WebSocketCloseStatus.NormalClosure,
-                        "TransGo diarization stopped.",
+                        "CaptionLink diarization stopped.",
                         cancellationToken);
                 }
                 catch (

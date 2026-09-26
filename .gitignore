@@ -481,7 +481,7 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# TransGo local secrets
+# CaptionLink local secrets
 .env
 *.env
 appsettings.Development.json

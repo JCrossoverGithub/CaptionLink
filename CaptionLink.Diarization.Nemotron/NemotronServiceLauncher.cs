@@ -264,7 +264,7 @@ public sealed class NemotronServiceLauncher
 
         /*
          * Match Parakeet: keep a healthy model alive so the next
-         * TransGo session starts quickly.
+         * CaptionLink session starts quickly.
          */
         DisposeServiceProcess();
         _healthClient.Dispose();

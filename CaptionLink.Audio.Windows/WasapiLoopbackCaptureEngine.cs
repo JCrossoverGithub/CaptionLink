@@ -122,7 +122,7 @@ public sealed class WasapiLoopbackCaptureEngine : IAudioCaptureEngine
                 _captureFormat = _capture.WaveFormat;
 
                 Debug.WriteLine(
-                    $"TransGo capture format: {_captureFormat}");
+                    $"CaptionLink capture format: {_captureFormat}");
 
                 _capture.DataAvailable += Capture_DataAvailable;
                 _capture.RecordingStopped += Capture_RecordingStopped;
@@ -230,7 +230,7 @@ public sealed class WasapiLoopbackCaptureEngine : IAudioCaptureEngine
         {
             // Meter failure must never interrupt audio delivery.
             Debug.WriteLine(
-                $"TransGo meter calculation failed: {exception}");
+                $"CaptionLink meter calculation failed: {exception}");
         }
 
         MetricsUpdated?.Invoke(

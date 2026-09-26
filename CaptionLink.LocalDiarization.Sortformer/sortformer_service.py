@@ -98,7 +98,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="TransGo Local Diarization",
+    title="CaptionLink Local Diarization",
     lifespan=lifespan,
 )
 
@@ -306,7 +306,7 @@ async def stream_audio(
         {
             "type": "connected",
             "message": (
-                "TransGo diarization audio stream connected."
+                "CaptionLink diarization audio stream connected."
             ),
         }
     )
@@ -823,7 +823,7 @@ async def stream_audio(
 
     except WebSocketDisconnect:
         print(
-            "TransGo diarization WebSocket "
+            "CaptionLink diarization WebSocket "
             "client disconnected.",
             flush=True,
         )
@@ -891,7 +891,7 @@ async def stream_audio(
             print(
                 "Fatal CUDA error detected. "
                 "Terminating the Sortformer service so "
-                "TransGo can launch a clean process.",
+                "CaptionLink can launch a clean process.",
                 flush=True,
             )
 

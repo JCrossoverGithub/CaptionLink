@@ -8,12 +8,12 @@ globalThis.chrome = {
 };
 Object.defineProperty(globalThis, "navigator", {
   configurable: true,
-  value: { userAgent: "TransGo protocol test" }
+  value: { userAgent: "CaptionLink protocol test" }
 });
 
 await import("../protocol.js");
 
-const protocol = globalThis.TransGoProtocol;
+const protocol = globalThis.CaptionLinkProtocol;
 
 test("normalizes the Tailscale HTTPS URL", () => {
   assert.equal(

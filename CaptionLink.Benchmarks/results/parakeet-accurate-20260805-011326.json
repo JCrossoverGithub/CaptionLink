@@ -71,7 +71,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "1089-134686-0000",
@@ -112,7 +112,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "1188-133604-0000",
@@ -153,7 +153,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "121-121726-0000",
@@ -194,7 +194,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "1221-135766-0000",
@@ -235,7 +235,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "1284-1180-0000",
@@ -276,7 +276,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "1320-122612-0000",
@@ -317,7 +317,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "1580-141083-0000",
@@ -358,7 +358,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "1995-1826-0000",
@@ -399,7 +399,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "2094-142345-0000",
@@ -440,7 +440,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "2300-131720-0000",
@@ -481,7 +481,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "237-126133-0000",
@@ -522,7 +522,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "260-123286-0000",
@@ -563,7 +563,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "2830-3979-0000",
@@ -604,7 +604,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "2961-960-0000",
@@ -645,7 +645,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "3570-5694-0000",
@@ -686,7 +686,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "3575-170457-0000",
@@ -727,7 +727,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "3729-6852-0000",
@@ -768,7 +768,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "4077-13751-0000",
@@ -809,7 +809,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "4446-2271-0000",
@@ -850,7 +850,7 @@
       },
       "service_connected_message": {
         "type": "connected",
-        "message": "TransGo audio stream connected."
+        "message": "CaptionLink audio stream connected."
       },
       "errors": [],
       "id": "4507-16021-0000",

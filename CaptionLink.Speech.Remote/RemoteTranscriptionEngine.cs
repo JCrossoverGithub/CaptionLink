@@ -100,7 +100,7 @@ public sealed class RemoteTranscriptionEngine : ITranscriptionEngine
                     ProtocolVersion: RemoteProtocol.CurrentVersion,
                     RequestId: requestId,
                     Client: new RemoteClientInfo(
-                        Name: "TransGo Desktop",
+                        Name: "CaptionLink Desktop",
                         Version: GetClientVersion(),
                         Platform: RuntimeInformation.OSDescription),
                     Audio: new RemoteAudioFormat(

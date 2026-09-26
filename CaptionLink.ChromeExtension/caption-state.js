@@ -1,4 +1,4 @@
-(function initializeTransGoCaptionState(root, factory) {
+(function initializeCaptionLinkCaptionState(root, factory) {
   "use strict";
 
   const api = factory();
@@ -7,7 +7,7 @@
     module.exports = api;
   }
 
-  root.TransGoCaptionState = api;
+  root.CaptionLinkCaptionState = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function createApi() {
   "use strict";
 

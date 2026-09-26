@@ -1,8 +1,8 @@
-﻿# Contributing to TransGo
+﻿# Contributing to CaptionLink
 
 Thanks for your interest in CaptionLink.
 
-TransGo is under active development, particularly around reusable caption-session orchestration, local GPU speech services, and future cross-platform support.
+CaptionLink is under active development, particularly around reusable caption-session orchestration, local GPU speech services, and future cross-platform support.
 
 ## Development setup
 
@@ -19,7 +19,7 @@ Start with:
 
 Create a branch from the current development base and keep changes focused.
 
-TransGo favors small, reviewable commits that preserve boundaries between:
+CaptionLink favors small, reviewable commits that preserve boundaries between:
 
 - platform-neutral application/core code,
 - platform-specific UI and audio capture,
@@ -112,7 +112,7 @@ For platform-specific work, keep the platform boundary explicit rather than addi
 
 Bug reports are most useful when they include:
 
-- TransGo version or commit,
+- CaptionLink version or commit,
 - operating system,
 - relevant provider or model,
 - whether transcription is local or remote,

@@ -4,7 +4,7 @@ namespace CaptionLink.Core.Runtime;
 
 /// <summary>
 /// Provides the platform-specific environment used to run
-/// local TransGo services.
+/// local CaptionLink services.
 /// </summary>
 public interface ILocalServiceRuntime
 {

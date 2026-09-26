@@ -74,7 +74,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="TransGo Local ASR",
+    title="CaptionLink Local ASR",
     lifespan=lifespan,
 )
 
@@ -238,7 +238,7 @@ async def stream_audio(websocket: WebSocket) -> None:
     await websocket.send_json(
         {
             "type": "connected",
-            "message": "TransGo audio stream connected.",
+            "message": "CaptionLink audio stream connected.",
         }
     )
 
@@ -684,7 +684,7 @@ async def stream_audio(websocket: WebSocket) -> None:
                     )
 
     except WebSocketDisconnect:
-        print("TransGo WebSocket client disconnected.")
+        print("CaptionLink WebSocket client disconnected.")
 
     except Exception as exception:
         fatal_cuda_error = is_fatal_cuda_error(
@@ -736,7 +736,7 @@ async def stream_audio(websocket: WebSocket) -> None:
             print(
                 "Fatal CUDA error detected. "
                 "Terminating the Parakeet service so "
-                "TransGo can launch a clean process.",
+                "CaptionLink can launch a clean process.",
                 flush=True,
             )
 

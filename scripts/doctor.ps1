@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 Write-Host ""
-Write-Host "TransGo development environment"
+Write-Host "CaptionLink development environment"
 Write-Host "==============================="
 Write-Host ""
 

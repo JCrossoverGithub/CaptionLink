@@ -322,7 +322,7 @@ public sealed class MultitalkerParakeetServiceLauncher
         _disposed = true;
 
         /*
-         * Keep the models resident after TransGo closes.
+         * Keep the models resident after CaptionLink closes.
          * The next Multitalker launch can reuse the service.
          */
         DisposeServiceProcess();

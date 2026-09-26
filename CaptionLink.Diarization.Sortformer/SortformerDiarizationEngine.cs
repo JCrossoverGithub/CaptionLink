@@ -6,7 +6,7 @@ using CaptionLink.Core.Diarization;
 namespace CaptionLink.Diarization.Sortformer;
 
 /// <summary>
-/// Streams normalized TransGo audio to the local Sortformer
+/// Streams normalized CaptionLink audio to the local Sortformer
 /// service and publishes speaker-activity intervals.
 /// </summary>
 public sealed class SortformerDiarizationEngine

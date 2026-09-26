@@ -1119,7 +1119,7 @@ async def lifespan(
 
 
 app = FastAPI(
-    title="TransGo Multitalker ASR",
+    title="CaptionLink Multitalker ASR",
     lifespan=lifespan,
 )
 
@@ -1250,7 +1250,7 @@ async def stream_audio(
         {
             "type": "connected",
             "message": (
-                "TransGo Multitalker "
+                "CaptionLink Multitalker "
                 "audio stream connected."
             ),
         }

@@ -24,7 +24,7 @@ public sealed record SherpaModelPaths(
         string modelDirectory =
             Path.Combine(
                 localAppData,
-                "TransGo",
+                "CaptionLink",
                 "Models",
                 DefaultModelName);
 

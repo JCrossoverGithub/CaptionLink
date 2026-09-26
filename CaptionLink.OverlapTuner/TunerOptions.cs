@@ -173,7 +173,7 @@ public sealed record TunerOptions(
 
     public static string Usage =>
         """
-        TransGo cached Sortformer-output overlap tuner
+        CaptionLink cached Sortformer-output overlap tuner
 
         Required:
           --trace-dir <path>              Directory containing *.sortformer-trace.json.gz

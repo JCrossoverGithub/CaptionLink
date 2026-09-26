@@ -23,7 +23,7 @@ public sealed record WhisperTurboModelPaths(
         string modelDirectory =
             Path.Combine(
                 localAppData,
-                "TransGo",
+                "CaptionLink",
                 "Models",
                 ModelFolderName);
 

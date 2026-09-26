@@ -280,7 +280,7 @@ public sealed class Pcm16MonoFrameNormalizer
         }
 
         throw new NotSupportedException(
-            $"TransGo cannot normalize " +
+            $"CaptionLink cannot normalize " +
             $"{frame.Encoding} audio with " +
             $"{frame.BitsPerSample} bits per sample.");
     }

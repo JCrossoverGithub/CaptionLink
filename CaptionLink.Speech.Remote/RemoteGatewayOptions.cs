@@ -23,14 +23,14 @@ public sealed record RemoteGatewayOptions(
         if (string.IsNullOrWhiteSpace(url))
         {
             throw new InvalidOperationException(
-                $"Set {UrlEnvironmentVariable} to the TransGo GPU " +
+                $"Set {UrlEnvironmentVariable} to the CaptionLink GPU " +
                 "gateway URL before starting remote captions.");
         }
 
         if (string.IsNullOrWhiteSpace(token))
         {
             throw new InvalidOperationException(
-                $"Set {TokenEnvironmentVariable} to the TransGo GPU " +
+                $"Set {TokenEnvironmentVariable} to the CaptionLink GPU " +
                 "gateway token before starting remote captions.");
         }
 

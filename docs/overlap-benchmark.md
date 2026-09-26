@@ -1,6 +1,6 @@
 # VoxConverse overlap benchmark
 
-This benchmark measures TransGo's production `SpeakerOverlapDetector` against VoxConverse v0.3 reference annotations. It streams each WAV through the same local Sortformer service and C# activity path used by the WPF application.
+This benchmark measures CaptionLink's production `SpeakerOverlapDetector` against VoxConverse v0.3 reference annotations. It streams each WAV through the same local Sortformer service and C# activity path used by the WPF application.
 
 VoxConverse is research data distributed under CC BY 4.0. The download script fetches the audio and annotations from the official project; no dataset files belong in this repository.
 
@@ -23,7 +23,7 @@ Use only the development set while selecting thresholds. Do not inspect or tune 
 
 ## 2. Run a small accelerated smoke test
 
-Close TransGo before starting because the Sortformer service accepts one session at a time.
+Close CaptionLink before starting because the Sortformer service accepts one session at a time.
 
 ```powershell
 dotnet run `
@@ -135,7 +135,7 @@ capture, the first capture pass will rerun those recordings. Each successful
 recording produces one atomic, gzip-compressed file named
 `<recording-id>.sortformer-trace.json.gz`.
 
-Normal TransGo and benchmark sessions do not publish raw probabilities unless
+Normal CaptionLink and benchmark sessions do not publish raw probabilities unless
 `--trace-dir` is present, so production sessions avoid the extra serialization
 and WebSocket traffic.
 

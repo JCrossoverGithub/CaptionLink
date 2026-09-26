@@ -1,4 +1,4 @@
-(function initializeTransGoLatency() {
+(function initializeCaptionLinkLatency() {
   "use strict";
 
   const maximumSamplesPerReport = 5000;
@@ -174,7 +174,7 @@
     };
   }
 
-  globalThis.TransGoLatency = Object.freeze({
+  globalThis.CaptionLinkLatency = Object.freeze({
     createDisplaySample,
     decorateReceivedCaption,
     nowMilliseconds,

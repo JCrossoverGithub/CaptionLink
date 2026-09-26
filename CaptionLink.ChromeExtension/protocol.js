@@ -1,4 +1,4 @@
-(function initializeTransGoProtocol(globalScope) {
+(function initializeCaptionLinkProtocol(globalScope) {
   "use strict";
 
   const CURRENT_VERSION = 1;
@@ -15,7 +15,7 @@
     const trimmed = String(value || "").trim();
 
     if (!trimmed) {
-      throw new Error("Enter the TransGo gateway URL.");
+      throw new Error("Enter the CaptionLink gateway URL.");
     }
 
     const url = new URL(trimmed);
@@ -58,7 +58,7 @@
     const value = String(token || "");
 
     if (!value.trim()) {
-      throw new Error("Enter the TransGo gateway token.");
+      throw new Error("Enter the CaptionLink gateway token.");
     }
 
     const bytes = new TextEncoder().encode(value);
@@ -87,7 +87,7 @@
       protocolVersion: CURRENT_VERSION,
       requestId,
       client: {
-        name: "TransGo Chrome Extension",
+        name: "CaptionLink Chrome Extension",
         version: typeof chrome.runtime.getManifest === "function"
           ? chrome.runtime.getManifest().version
           : "0.1.0",
@@ -125,7 +125,7 @@
     return packet;
   }
 
-  globalScope.TransGoProtocol = Object.freeze({
+  globalScope.CaptionLinkProtocol = Object.freeze({
     CURRENT_VERSION,
     WEBSOCKET_PATH,
     SAMPLE_RATE_HZ,

@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace CaptionLink.Core.Runtime;
 
 /// <summary>
-/// Runs local TransGo services through the user's default
+/// Runs local CaptionLink services through the user's default
 /// Windows Subsystem for Linux distribution.
 /// </summary>
 public sealed class WslLocalServiceRuntime

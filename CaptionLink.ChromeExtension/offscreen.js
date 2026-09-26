@@ -1,7 +1,7 @@
 "use strict";
 
-const protocol = globalThis.TransGoProtocol;
-const latency = globalThis.TransGoLatency;
+const protocol = globalThis.CaptionLinkProtocol;
+const latency = globalThis.CaptionLinkLatency;
 const sessionStartTimeoutMilliseconds = 120000;
 
 let capture = null;
@@ -167,7 +167,7 @@ async function startCapture({ tabId, streamId, gatewayUrl, token }) {
     await waitForWebSocketOpen(session.socket, 10000);
 
     if (session.socket.protocol !== protocol.BROWSER_SUBPROTOCOL) {
-      throw new Error("The gateway did not accept the TransGo browser protocol.");
+      throw new Error("The gateway did not accept the CaptionLink browser protocol.");
     }
 
     session.socket.send(JSON.stringify(
@@ -496,7 +496,7 @@ async function publishLatencyReport(session) {
     session.receivedLatencySamples,
     session.displayLatencySamples);
 
-  console.info("TransGo latency report", report);
+  console.info("CaptionLink latency report", report);
 
   await sendToBackground({
     type: "latency_report",
@@ -527,7 +527,7 @@ async function disposeSession(session) {
   if (session.socket &&
       session.socket.readyState !== WebSocket.CLOSED &&
       session.socket.readyState !== WebSocket.CLOSING) {
-    session.socket.close(1000, "TransGo capture stopped.");
+    session.socket.close(1000, "CaptionLink capture stopped.");
   }
 
   if (capture === session) {

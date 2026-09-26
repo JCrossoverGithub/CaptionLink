@@ -218,7 +218,7 @@ public sealed record BenchmarkOptions(
 
     public static string Usage =>
         """
-        TransGo VoxConverse overlap benchmark
+        CaptionLink VoxConverse overlap benchmark
 
         Required:
           --audio-dir <path>       Directory containing VoxConverse WAV files

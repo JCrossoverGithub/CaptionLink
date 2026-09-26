@@ -12,7 +12,7 @@ public sealed class SherpaStreamingTranscriptionEngine
     : ITranscriptionEngine
 {
     /*
-     * Each TransGo chunk is approximately 100 ms.
+     * Each CaptionLink chunk is approximately 100 ms.
      * A capacity of 100 permits about 10 seconds of buffering
      * during a temporary CPU slowdown.
      */

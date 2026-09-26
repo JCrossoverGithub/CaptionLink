@@ -35,7 +35,7 @@ class StreamingSortformerAudioPreprocessor:
     Converts streaming mono PCM16 audio to overlapping 16 kHz
     Sortformer windows.
 
-    With TransGo's low-latency profile:
+    With CaptionLink's low-latency profile:
       - input window: 1.04 seconds / 16,640 samples
       - prediction hop: 0.48 seconds / 7,680 samples
       - retained right context: 0.56 seconds / 8,960 samples

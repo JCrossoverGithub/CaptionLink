@@ -29,7 +29,7 @@ public static class WslRuntime
         if (!Directory.Exists(windowsDirectory))
         {
             throw new DirectoryNotFoundException(
-                "TransGo service directory was not found: " +
+                "CaptionLink service directory was not found: " +
                 windowsDirectory);
         }
 
@@ -122,7 +122,7 @@ public static class WslRuntime
         }
 
         throw new DirectoryNotFoundException(
-            "Could not locate the TransGo repository. " +
+            "Could not locate the CaptionLink repository. " +
             "Run the application from a repository clone " +
             $"or set {RepositoryEnvironmentVariable}.");
     }

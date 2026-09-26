@@ -13,13 +13,13 @@ personal information, exploit code, or other sensitive material in that issue.
 
 ## Supported versions
 
-TransGo is currently a pre-1.0 project. Security fixes are targeted at the
+CaptionLink is currently a pre-1.0 project. Security fixes are targeted at the
 latest code on `main` and, when applicable, the newest published release.
 
 Older development snapshots and releases may not receive security updates.
 
 ## Scope
 
-Reports involving TransGo source code, the desktop application, GPU gateway,
+Reports involving CaptionLink source code, the desktop application, GPU gateway,
 remote transcription protocol, Chrome extension, authentication handling, or
 local service launch infrastructure are welcome.

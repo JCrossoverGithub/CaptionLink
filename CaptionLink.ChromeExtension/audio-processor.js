@@ -1,6 +1,6 @@
 "use strict";
 
-class TransGoPcmProcessor extends AudioWorkletProcessor {
+class CaptionLinkPcmProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
     this.targetSampleRate = 16000;
@@ -87,4 +87,4 @@ class TransGoPcmProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("transgo-pcm-processor", TransGoPcmProcessor);
+registerProcessor("transgo-pcm-processor", CaptionLinkPcmProcessor);

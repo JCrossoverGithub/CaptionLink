@@ -1,6 +1,6 @@
-﻿# TransGo
+﻿# CaptionLink
 
-TransGo is a real-time captioning system for desktop and browser audio.
+CaptionLink is a real-time captioning system for desktop and browser audio.
 
 The current Windows application captures system output audio and produces live on-screen captions using local or remote speech-recognition providers. Its primary local mode supports multi-speaker captions on an NVIDIA GPU, while the project also includes standalone speaker-attribution pipelines, a remote GPU gateway, a Chrome client, latency instrumentation, and diarization benchmarking tools.
 
@@ -8,7 +8,7 @@ The current Windows application captures system output audio and produces live o
 
 The Windows desktop application is the primary supported host today.
 
-TransGo is currently being refactored so caption-session behavior, speech-provider contracts, diarization, and local-service orchestration are separated from Windows-specific UI and audio capture. That work is intended to make future macOS and Linux hosts possible without duplicating the captioning pipeline.
+CaptionLink is currently being refactored so caption-session behavior, speech-provider contracts, diarization, and local-service orchestration are separated from Windows-specific UI and audio capture. That work is intended to make future macOS and Linux hosts possible without duplicating the captioning pipeline.
 
 macOS and Linux desktop applications are not released yet.
 
@@ -40,7 +40,7 @@ The local model services run in the configured local-service runtime. The Window
 
 The Windows application also contains integrations for:
 
-- **Remote — TransGo GPU Gateway**
+- **Remote — CaptionLink GPU Gateway**
 - **Google Cloud**
 - **Local — Sherpa Streaming**
 
@@ -48,7 +48,7 @@ These providers remain available as alternate or development paths. Current loca
 
 ### Remote caption streaming
 
-TransGo includes a WebSocket-based GPU gateway and a Chrome extension prototype.
+CaptionLink includes a WebSocket-based GPU gateway and a Chrome extension prototype.
 
 A client can capture audio on another device, stream normalized PCM audio to a GPU machine, and receive interim and final captions in real time. The remote protocol includes timing metadata used for end-to-end latency measurement.
 
@@ -77,7 +77,7 @@ The cross-platform work is intentionally not a WPF port. Reusable captioning beh
 
 ## Architecture
 
-TransGo is split into reusable application/core layers and platform/provider implementations.
+CaptionLink is split into reusable application/core layers and platform/provider implementations.
 
 ~~~text
 CaptionLink.Windows
@@ -167,7 +167,7 @@ dotnet test .\CaptionLink.slnx -c Release --no-build
 ~/.local/share/transgo/
 ~~~
 
-It installs the pinned NeMo environment, TransGo's service dependencies, and the pinned Transformers/Nemotron overlay, then validates CUDA and the required model runtime.
+It installs the pinned NeMo environment, CaptionLink's service dependencies, and the pinned Transformers/Nemotron overlay, then validates CUDA and the required model runtime.
 
 The first bootstrap requires network access and may take substantial time because GPU dependencies and model components are large.
 
@@ -181,7 +181,7 @@ dotnet run `
   -c Release
 ~~~
 
-For repository discovery, TransGo normally finds `CaptionLink.slnx` by walking upward from the current directory or application directory.
+For repository discovery, CaptionLink normally finds `CaptionLink.slnx` by walking upward from the current directory or application directory.
 
 If needed, set:
 
@@ -212,7 +212,7 @@ The GPU gateway requires:
 TRANSGO_GATEWAY_TOKEN
 ~~~
 
-Remote TransGo clients can use:
+Remote CaptionLink clients can use:
 
 ~~~text
 TRANSGO_REMOTE_GATEWAY_URL
@@ -268,4 +268,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development and contribution guidance
 
 ## License
 
-TransGo is licensed under the [MIT License](LICENSE).
+CaptionLink is licensed under the [MIT License](LICENSE).

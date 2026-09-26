@@ -1,6 +1,6 @@
 # End-to-end caption latency
 
-TransGo measures caption latency without comparing wall clocks on the Chrome
+CaptionLink measures caption latency without comparing wall clocks on the Chrome
 client and Windows gateway. The two devices can have different clock offsets,
 so subtracting their UTC timestamps would produce misleading results.
 

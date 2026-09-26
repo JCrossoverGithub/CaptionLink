@@ -250,7 +250,7 @@ async def main() -> int:
 
     if initial_health is None or initial_health.get("status") != "ready":
         raise RuntimeError(
-            "Parakeet is not ready. Open TransGo, wait for the local "
+            "Parakeet is not ready. Open CaptionLink, wait for the local "
             "service to load, and do not click Start Listening."
         )
 

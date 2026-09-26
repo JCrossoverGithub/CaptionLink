@@ -6,7 +6,7 @@ using CaptionLink.Core.Transcription;
 namespace CaptionLink.Speech.Parakeet;
 
 /// <summary>
-/// Sends normalized TransGo audio to the persistent local
+/// Sends normalized CaptionLink audio to the persistent local
 /// Parakeet service.
 /// </summary>
 public sealed class ParakeetStreamingTranscriptionEngine

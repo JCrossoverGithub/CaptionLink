@@ -557,7 +557,7 @@ public partial class MainWindow : Window
                 "Could not load audio devices";
 
             MessageBox.Show(
-                "TransGo could not list the available " +
+                "CaptionLink could not list the available " +
                 $"audio devices.\n\n{exception.Message}",
                 "Audio device error",
                 MessageBoxButton.OK,
@@ -635,8 +635,8 @@ public partial class MainWindow : Window
                 "Local — Multitalker Parakeet" =>
                     "Preparing Multitalker Parakeet + Nemotron 3…",
 
-                "Remote — TransGo GPU Gateway" =>
-                    "Connecting to TransGo GPU gateway…",
+                "Remote — CaptionLink GPU Gateway" =>
+                    "Connecting to CaptionLink GPU gateway…",
 
                 "Google Cloud" =>
                     "Connecting to Google Speech-to-Text…",
@@ -831,7 +831,7 @@ public partial class MainWindow : Window
                 "Could not start live transcription";
 
             MessageBox.Show(
-                "TransGo could not start live transcription." +
+                "CaptionLink could not start live transcription." +
                 $"\n\n{exception.Message}",
                 "Transcription startup error",
                 MessageBoxButton.OK,

@@ -6,7 +6,7 @@ using CaptionLink.Core.Diarization;
 namespace CaptionLink.Diarization.Nemotron;
 
 /// <summary>
-/// Streams normalized TransGo audio to the local Nemotron
+/// Streams normalized CaptionLink audio to the local Nemotron
 /// service and publishes speaker-activity intervals.
 /// </summary>
 public sealed class NemotronDiarizationEngine

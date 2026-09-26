@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "TransGo Live Captions",
-  "description": "Captions audio from the active Chrome tab through a TransGo GPU gateway.",
+  "name": "CaptionLink Live Captions",
+  "description": "Captions audio from the active Chrome tab through a CaptionLink GPU gateway.",
   "version": "0.1.0",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -12,7 +12,7 @@
     "tabCapture"
   ],
   "action": {
-    "default_title": "TransGo Live Captions",
+    "default_title": "CaptionLink Live Captions",
     "default_popup": "popup.html"
   },
   "background": {

@@ -152,7 +152,7 @@ public sealed class RemoteProtocolTests
             ProtocolVersion: RemoteProtocol.CurrentVersion,
             RequestId: "request-001",
             Client: new RemoteClientInfo(
-                Name: "TransGo Test Client",
+                Name: "CaptionLink Test Client",
                 Version: "1.0.0",
                 Platform: "Windows"),
             Audio: new RemoteAudioFormat(

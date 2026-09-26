@@ -18,7 +18,7 @@ PREDICTION_FRAME_SAMPLE_COUNT = round(
     * PREDICTION_FRAME_DURATION_SECONDS
 )
 
-# Low-latency profile validated on the TransGo development machine.
+# Low-latency profile validated on the CaptionLink development machine.
 CHUNK_LENGTH = 6
 CHUNK_RIGHT_CONTEXT = 7
 FIFO_LENGTH = 188

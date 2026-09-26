@@ -1,7 +1,7 @@
 ﻿<Window x:Class="CaptionLink.Windows.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="TransGo"
+        Title="CaptionLink"
         Width="1180"
         Height="760"
         MinWidth="940"
@@ -84,7 +84,7 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel>
-                <TextBlock Text="TransGo"
+                <TextBlock Text="CaptionLink"
                            FontSize="28"
                            FontWeight="SemiBold"
                            Foreground="White"/>
@@ -236,7 +236,7 @@
                                    FontWeight="SemiBold"
                                    Foreground="White"/>
 
-                        <TextBlock Text="Choose the system output TransGo should listen to."
+                        <TextBlock Text="Choose the system output CaptionLink should listen to."
                                    Margin="0,4,0,12"
                                    TextWrapping="Wrap"
                                    FontSize="12"
@@ -305,7 +305,7 @@
                                 <ComboBoxItem Content="Local — Parakeet GPU"
                                 Tag="parakeet"/>
 
-                                <ComboBoxItem Content="Remote — TransGo GPU Gateway"
+                                <ComboBoxItem Content="Remote — CaptionLink GPU Gateway"
                                 Tag="remote"/>
 
                                 <ComboBoxItem Content="Google Cloud"

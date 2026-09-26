@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Run a LibriSpeech manifest through the live TransGo Parakeet WebSocket service.
+Run a LibriSpeech manifest through the live CaptionLink Parakeet WebSocket service.
 
 The benchmark replays each clip at real-time speed, records transcript and
 latency information, computes per-clip and aggregate WER/CER with JiWER, and
@@ -45,7 +45,7 @@ def parse_args() -> argparse.Namespace:
     benchmark_root = Path(__file__).resolve().parents[1]
 
     parser = argparse.ArgumentParser(
-        description="Benchmark the live TransGo Parakeet service."
+        description="Benchmark the live CaptionLink Parakeet service."
     )
     parser.add_argument(
         "--manifest",

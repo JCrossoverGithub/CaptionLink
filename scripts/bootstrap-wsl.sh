@@ -21,7 +21,7 @@ HF_TRANSFORMERS_DIR="$TRANSGO_DATA_DIR/transformers-nemotron-main"
 HF_DEPS_DIR="$TRANSGO_DATA_DIR/transformers-nemotron-deps"
 HF_OVERLAY_REQUIREMENTS="$REPO_ROOT/config/hf-nemotron-overlay-requirements.txt"
 
-echo "TransGo WSL bootstrap"
+echo "CaptionLink WSL bootstrap"
 echo "====================="
 echo
 echo "Data directory: $TRANSGO_DATA_DIR"
@@ -79,7 +79,7 @@ if [[ ! -f "$SERVICE_REQUIREMENTS" ]]; then
 fi
 
 echo
-echo "Installing TransGo service runtime dependencies..."
+echo "Installing CaptionLink service runtime dependencies..."
 uv pip install \
     --python "$PYTHON" \
     --requirement "$SERVICE_REQUIREMENTS"

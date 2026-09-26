@@ -7,7 +7,7 @@ using CaptionLink.Core.Audio;
 namespace CaptionLink.Speech.Parakeet;
 
 /// <summary>
-/// Sends TransGo PCM16 audio to the local Parakeet service
+/// Sends CaptionLink PCM16 audio to the local Parakeet service
 /// and receives JSON status or transcript messages.
 /// </summary>
 public sealed class ParakeetServiceClient
@@ -210,7 +210,7 @@ public sealed class ParakeetServiceClient
                 {
                     await socket.CloseOutputAsync(
                         WebSocketCloseStatus.NormalClosure,
-                        "TransGo session stopped.",
+                        "CaptionLink session stopped.",
                         CancellationToken.None);
                 }
                 catch (WebSocketException)
