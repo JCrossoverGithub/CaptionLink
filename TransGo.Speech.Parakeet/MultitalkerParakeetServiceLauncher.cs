@@ -32,8 +32,23 @@ public sealed class MultitalkerParakeetServiceLauncher
             Timeout = TimeSpan.FromSeconds(2),
         };
 
+    private readonly ILocalServiceRuntime _runtime;
+
     private Process? _serviceProcess;
     private bool _disposed;
+
+    public MultitalkerParakeetServiceLauncher()
+        : this(new WslLocalServiceRuntime())
+    {
+    }
+
+    public MultitalkerParakeetServiceLauncher(
+        ILocalServiceRuntime runtime)
+    {
+        ArgumentNullException.ThrowIfNull(runtime);
+
+        _runtime = runtime;
+    }
 
     public async Task EnsureReadyAsync(
         CancellationToken cancellationToken = default)
@@ -120,7 +135,7 @@ public sealed class MultitalkerParakeetServiceLauncher
         }
     }
 
-    private static async Task
+    private async Task
         StopConflictingServicesAsync(
             CancellationToken cancellationToken)
     {
@@ -142,7 +157,7 @@ public sealed class MultitalkerParakeetServiceLauncher
             new()
             {
                 StartInfo =
-                    WslRuntime.CreateStartInfo(
+                    _runtime.CreateShellStartInfo(
                         stopCommand,
                         redirectOutput: false),
             };
@@ -158,10 +173,10 @@ public sealed class MultitalkerParakeetServiceLauncher
             cancellationToken);
     }
 
-    private static Process StartServiceProcess()
+    private Process StartServiceProcess()
     {
         string repositoryDirectory =
-            WslRuntime.GetLinuxRepositoryDirectory(
+            _runtime.GetRepositoryDirectory(
                 ServiceDirectoryName);
 
         string command =
@@ -174,7 +189,7 @@ public sealed class MultitalkerParakeetServiceLauncher
             "--port 8768";
 
         var startInfo =
-            WslRuntime.CreateStartInfo(
+            _runtime.CreateShellStartInfo(
                 command,
                 redirectOutput: true);
 
