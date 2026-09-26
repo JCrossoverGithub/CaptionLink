@@ -14,8 +14,8 @@ public sealed class ParakeetStreamingTranscriptionEngine
 {
     private readonly object _gate = new();
 
-    private readonly ParakeetServiceLauncher
-    _serviceLauncher = new();
+    private readonly IParakeetServiceLauncher
+    _serviceLauncher;
 
     private ParakeetServiceClient? _client;
     private int? _configuredSampleRate;
@@ -42,10 +42,23 @@ public sealed class ParakeetStreamingTranscriptionEngine
     }
 
     public ParakeetStreamingTranscriptionEngine(
-    ParakeetStreamingProfile streamingProfile =
-        ParakeetStreamingProfile.Accurate)
+        ParakeetStreamingProfile streamingProfile =
+            ParakeetStreamingProfile.Accurate)
+        : this(
+            streamingProfile,
+            new ParakeetServiceLauncher())
     {
+    }
+
+    public ParakeetStreamingTranscriptionEngine(
+        ParakeetStreamingProfile streamingProfile,
+        IParakeetServiceLauncher serviceLauncher)
+    {
+        ArgumentNullException.ThrowIfNull(
+            serviceLauncher);
+
         _streamingProfile = streamingProfile;
+        _serviceLauncher = serviceLauncher;
     }
 
     public async Task StartAsync(

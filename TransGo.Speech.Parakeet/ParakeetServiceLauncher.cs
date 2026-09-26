@@ -8,7 +8,7 @@ namespace TransGo.Speech.Parakeet;
 /// that the requested streaming profile is loaded.
 /// </summary>
 public sealed class ParakeetServiceLauncher
-    : IAsyncDisposable
+    : IParakeetServiceLauncher
 {
     private const string ServiceDirectoryName =
         "TransGo.LocalAsr.Parakeet";
