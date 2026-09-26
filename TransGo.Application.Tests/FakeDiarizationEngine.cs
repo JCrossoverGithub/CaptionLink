@@ -23,6 +23,8 @@ internal sealed class FakeDiarizationEngine
 
     public bool ThrowOnStart { get; set; }
 
+    public bool ThrowOnSend { get; set; }
+
     public bool ThrowOnStop { get; set; }
 
     public Task StartAsync(
@@ -31,6 +33,8 @@ internal sealed class FakeDiarizationEngine
     {
         _operations.Add(
             "diarization:start");
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         if (ThrowOnStart)
         {
@@ -49,6 +53,14 @@ internal sealed class FakeDiarizationEngine
     {
         _operations.Add(
             "diarization:send");
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (ThrowOnSend)
+        {
+            throw new InvalidOperationException(
+                "Diarization send failed.");
+        }
 
         return ValueTask.CompletedTask;
     }

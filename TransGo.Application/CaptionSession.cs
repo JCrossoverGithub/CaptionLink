@@ -13,9 +13,10 @@ public sealed class CaptionSession : IAsyncDisposable
     private readonly ITranscriptionEngine
         _transcriptionEngine;
 
-    private readonly IDiarizationEngine?
+    private IDiarizationEngine?
         _diarizationEngine;
 
+    private int _diarizationFailureHandled;
     private int _disposed;
 
     public CaptionSession(
@@ -54,11 +55,16 @@ public sealed class CaptionSession : IAsyncDisposable
     public event EventHandler<SpeakerActivityEventArgs>?
         ActivityReceived;
 
+    public event EventHandler<
+        SpeakerAttributionUnavailableEventArgs>?
+        SpeakerAttributionUnavailable;
+
     public bool IsRunning =>
         _transcriptionEngine.IsRunning;
 
     public bool IsSpeakerAttributionRunning =>
-        _diarizationEngine?.IsRunning == true;
+        Volatile.Read(ref _diarizationEngine)
+            ?.IsRunning == true;
 
     public async Task StartAsync(
         TranscriptionConfiguration
@@ -72,8 +78,12 @@ public sealed class CaptionSession : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(
             transcriptionConfiguration);
 
+        IDiarizationEngine? diarizationEngine =
+            Volatile.Read(
+                ref _diarizationEngine);
+
         if (
-            _diarizationEngine is not null
+            diarizationEngine is not null
             && diarizationConfiguration is null)
         {
             throw new ArgumentNullException(
@@ -87,23 +97,11 @@ public sealed class CaptionSession : IAsyncDisposable
             await _transcriptionEngine.StartAsync(
                 transcriptionConfiguration,
                 cancellationToken);
-
-            if (_diarizationEngine is not null)
-            {
-                await _diarizationEngine.StartAsync(
-                    diarizationConfiguration!,
-                    cancellationToken);
-            }
         }
         catch (Exception startupException)
         {
             try
             {
-                /*
-                 * Startup is atomic at the session boundary.
-                 * Stop anything that became active before the
-                 * startup failure was reported.
-                 */
                 await StopCoreAsync(
                     CancellationToken.None);
             }
@@ -117,6 +115,47 @@ public sealed class CaptionSession : IAsyncDisposable
             }
 
             throw;
+        }
+
+        if (diarizationEngine is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await diarizationEngine.StartAsync(
+                diarizationConfiguration!,
+                cancellationToken);
+        }
+        catch (OperationCanceledException cancellationException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await StopCoreAsync(
+                    CancellationToken.None);
+            }
+            catch (Exception rollbackException)
+            {
+                throw new AggregateException(
+                    "Starting the caption session was canceled and " +
+                    "rollback also failed.",
+                    cancellationException,
+                    rollbackException);
+            }
+
+            throw;
+        }
+        catch (Exception exception)
+        {
+            /*
+             * External speaker attribution is optional.
+             * Transcription stays active if diarization cannot start.
+             */
+            await DisableDiarizationAsync(
+                diarizationEngine,
+                exception);
         }
     }
 
@@ -136,11 +175,35 @@ public sealed class CaptionSession : IAsyncDisposable
                 cancellationToken);
         }
 
-        if (_diarizationEngine?.IsRunning == true)
+        IDiarizationEngine? diarizationEngine =
+            Volatile.Read(
+                ref _diarizationEngine);
+
+        if (diarizationEngine?.IsRunning != true)
         {
-            await _diarizationEngine.SendAsync(
+            return;
+        }
+
+        try
+        {
+            await diarizationEngine.SendAsync(
                 chunk,
                 cancellationToken);
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            /*
+             * Losing optional speaker attribution must not stop
+             * ordinary transcription.
+             */
+            await DisableDiarizationAsync(
+                diarizationEngine,
+                exception);
         }
     }
 
@@ -182,14 +245,19 @@ public sealed class CaptionSession : IAsyncDisposable
                     SpeakerActivitySource_ActivityReceived;
             }
 
-            if (_diarizationEngine is not null)
+            IDiarizationEngine? diarizationEngine =
+                Interlocked.Exchange(
+                    ref _diarizationEngine,
+                    null);
+
+            if (diarizationEngine is not null)
             {
-                _diarizationEngine.ActivityReceived -=
+                diarizationEngine.ActivityReceived -=
                     SpeakerActivitySource_ActivityReceived;
 
                 try
                 {
-                    await _diarizationEngine.DisposeAsync();
+                    await diarizationEngine.DisposeAsync();
                 }
                 finally
                 {
@@ -203,13 +271,87 @@ public sealed class CaptionSession : IAsyncDisposable
         }
     }
 
+    private async Task DisableDiarizationAsync(
+        IDiarizationEngine failedEngine,
+        Exception failure)
+    {
+        if (
+            Interlocked.Exchange(
+                ref _diarizationFailureHandled,
+                1)
+            != 0)
+        {
+            return;
+        }
+
+        IDiarizationEngine? removedEngine =
+            Interlocked.CompareExchange(
+                ref _diarizationEngine,
+                null,
+                failedEngine);
+
+        if (!ReferenceEquals(
+                removedEngine,
+                failedEngine))
+        {
+            return;
+        }
+
+        failedEngine.ActivityReceived -=
+            SpeakerActivitySource_ActivityReceived;
+
+        Exception reportedException =
+            failure;
+
+        try
+        {
+            if (failedEngine.IsRunning)
+            {
+                await failedEngine.StopAsync(
+                    CancellationToken.None);
+            }
+        }
+        catch (Exception stopException)
+        {
+            reportedException =
+                new AggregateException(
+                    "Speaker attribution failed and could not " +
+                    "be stopped cleanly.",
+                    reportedException,
+                    stopException);
+        }
+
+        try
+        {
+            await failedEngine.DisposeAsync();
+        }
+        catch (Exception disposeException)
+        {
+            reportedException =
+                new AggregateException(
+                    "Speaker attribution failed and could not " +
+                    "be disposed cleanly.",
+                    reportedException,
+                    disposeException);
+        }
+
+        SpeakerAttributionUnavailable?.Invoke(
+            this,
+            new SpeakerAttributionUnavailableEventArgs(
+                reportedException));
+    }
+
     private async Task StopCoreAsync(
         CancellationToken cancellationToken)
     {
         Exception? diarizationError = null;
         Exception? transcriptionError = null;
 
-        if (_diarizationEngine?.IsRunning == true)
+        IDiarizationEngine? diarizationEngine =
+            Volatile.Read(
+                ref _diarizationEngine);
+
+        if (diarizationEngine?.IsRunning == true)
         {
             try
             {
@@ -218,7 +360,7 @@ public sealed class CaptionSession : IAsyncDisposable
                  * can use the final activity intervals while it
                  * publishes any buffered final result.
                  */
-                await _diarizationEngine.StopAsync(
+                await diarizationEngine.StopAsync(
                     cancellationToken);
             }
             catch (Exception exception)

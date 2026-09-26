@@ -72,7 +72,7 @@ public sealed class CaptionSessionTests
     }
 
     [Fact]
-    public async Task StartAsync_RollsBackTranscriptionWhenDiarizationFails()
+    public async Task StartAsync_ContinuesWhenDiarizationFails()
     {
         var operations =
             new List<string>();
@@ -93,21 +93,216 @@ public sealed class CaptionSessionTests
                 transcription,
                 diarization);
 
-        await Assert.ThrowsAsync<
-            InvalidOperationException>(
+        Exception? reportedFailure =
+            null;
+
+        session.SpeakerAttributionUnavailable +=
+            (_, e) =>
+                reportedFailure =
+                    e.Exception;
+
+        await session.StartAsync(
+            CreateTranscriptionConfiguration(),
+            CreateDiarizationConfiguration());
+
+        Assert.True(
+            transcription.IsRunning);
+
+        Assert.False(
+            session.IsSpeakerAttributionRunning);
+
+        Assert.NotNull(
+            reportedFailure);
+
+        Assert.Equal(
+            [
+                "transcription:start",
+                "diarization:start",
+                "diarization:dispose",
+            ],
+            operations);
+    }
+
+    [Fact]
+    public async Task SendAsync_DisablesFailedDiarizationAndContinues()
+    {
+        var operations =
+            new List<string>();
+
+        var transcription =
+            new FakeTranscriptionEngine(
+                operations);
+
+        var diarization =
+            new FakeDiarizationEngine(
+                operations)
+            {
+                ThrowOnSend = true,
+            };
+
+        await using var session =
+            new CaptionSession(
+                transcription,
+                diarization);
+
+        int failureNotifications = 0;
+
+        session.SpeakerAttributionUnavailable +=
+            (_, _) =>
+                failureNotifications++;
+
+        await session.StartAsync(
+            CreateTranscriptionConfiguration(),
+            CreateDiarizationConfiguration());
+
+        operations.Clear();
+
+        await session.SendAsync(
+            CreateAudioChunk());
+
+        Assert.True(
+            transcription.IsRunning);
+
+        Assert.False(
+            session.IsSpeakerAttributionRunning);
+
+        Assert.Equal(
+            1,
+            failureNotifications);
+
+        Assert.Equal(
+            [
+                "transcription:send",
+                "diarization:send",
+                "diarization:stop",
+                "diarization:dispose",
+            ],
+            operations);
+
+        operations.Clear();
+
+        await session.SendAsync(
+            CreateAudioChunk());
+
+        Assert.Equal(
+            [
+                "transcription:send",
+            ],
+            operations);
+
+        Assert.Equal(
+            1,
+            failureNotifications);
+    }
+
+    [Fact]
+    public async Task StartAsync_PropagatesDiarizationCancellation()
+    {
+        var operations =
+            new List<string>();
+
+        var transcription =
+            new FakeTranscriptionEngine(
+                operations);
+
+        var diarization =
+            new FakeDiarizationEngine(
+                operations);
+
+        await using var session =
+            new CaptionSession(
+                transcription,
+                diarization);
+
+        int failureNotifications = 0;
+
+        session.SpeakerAttributionUnavailable +=
+            (_, _) =>
+                failureNotifications++;
+
+        using var cancellation =
+            new CancellationTokenSource();
+
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<
+            OperationCanceledException>(
             () =>
                 session.StartAsync(
                     CreateTranscriptionConfiguration(),
-                    CreateDiarizationConfiguration()));
+                    CreateDiarizationConfiguration(),
+                    cancellation.Token));
 
         Assert.False(
             transcription.IsRunning);
+
+        Assert.Equal(
+            0,
+            failureNotifications);
 
         Assert.Equal(
             [
                 "transcription:start",
                 "diarization:start",
                 "transcription:stop",
+            ],
+            operations);
+    }
+
+    [Fact]
+    public async Task SendAsync_PropagatesDiarizationCancellationWithoutDisablingIt()
+    {
+        var operations =
+            new List<string>();
+
+        var transcription =
+            new FakeTranscriptionEngine(
+                operations);
+
+        var diarization =
+            new FakeDiarizationEngine(
+                operations);
+
+        await using var session =
+            new CaptionSession(
+                transcription,
+                diarization);
+
+        int failureNotifications = 0;
+
+        session.SpeakerAttributionUnavailable +=
+            (_, _) =>
+                failureNotifications++;
+
+        await session.StartAsync(
+            CreateTranscriptionConfiguration(),
+            CreateDiarizationConfiguration());
+
+        operations.Clear();
+
+        using var cancellation =
+            new CancellationTokenSource();
+
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<
+            OperationCanceledException>(
+            async () =>
+                await session.SendAsync(
+                    CreateAudioChunk(),
+                    cancellation.Token));
+
+        Assert.True(
+            session.IsSpeakerAttributionRunning);
+
+        Assert.Equal(
+            0,
+            failureNotifications);
+
+        Assert.Equal(
+            [
+                "transcription:send",
+                "diarization:send",
             ],
             operations);
     }
