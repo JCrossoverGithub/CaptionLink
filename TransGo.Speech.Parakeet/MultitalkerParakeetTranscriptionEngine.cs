@@ -1,12 +1,14 @@
 using System.Diagnostics;
 using System.Text.Json;
 using TransGo.Core.Audio;
+using TransGo.Core.Diarization;
 using TransGo.Core.Transcription;
 
 namespace TransGo.Speech.Parakeet;
 
 public sealed class MultitalkerParakeetTranscriptionEngine
-    : ITranscriptionEngine
+    : ITranscriptionEngine,
+      ISpeakerActivitySource
 {
     private static readonly Uri ServiceUri =
         new("ws://localhost:8768/stream");
@@ -25,6 +27,9 @@ public sealed class MultitalkerParakeetTranscriptionEngine
 
     public event EventHandler<TranscriptResultEventArgs>?
         ResultReceived;
+
+    public event EventHandler<SpeakerActivityEventArgs>?
+        ActivityReceived;
 
     public bool IsRunning
     {
@@ -237,6 +242,11 @@ public sealed class MultitalkerParakeetTranscriptionEngine
                         errorMessage);
                     break;
 
+                case "speaker_activity":
+                    ProcessSpeakerActivityMessage(
+                        root);
+                    break;
+
                 case "transcript":
                     ProcessTranscriptMessage(
                         root);
@@ -255,6 +265,104 @@ public sealed class MultitalkerParakeetTranscriptionEngine
                 "Invalid Multitalker service JSON: " +
                 exception);
         }
+    }
+
+    private void ProcessSpeakerActivityMessage(
+        JsonElement root)
+    {
+        string activityId =
+            root.TryGetProperty(
+                "activity_id",
+                out JsonElement activityElement)
+                ? activityElement.GetString()
+                  ?? string.Empty
+                : string.Empty;
+
+        string speakerId =
+            root.TryGetProperty(
+                "speaker_id",
+                out JsonElement speakerElement)
+                ? speakerElement.GetString()
+                  ?? string.Empty
+                : string.Empty;
+
+        if (
+            string.IsNullOrWhiteSpace(
+                activityId)
+            ||
+            string.IsNullOrWhiteSpace(
+                speakerId))
+        {
+            return;
+        }
+
+        long sequence =
+            root.TryGetProperty(
+                "sequence",
+                out JsonElement sequenceElement)
+            &&
+            sequenceElement.TryGetInt64(
+                out long parsedSequence)
+                ? parsedSequence
+                : 0;
+
+        TimeSpan? startTime =
+            TryReadTimeSpanSeconds(
+                root,
+                "start_time_seconds");
+
+        TimeSpan? endTime =
+            TryReadTimeSpanSeconds(
+                root,
+                "end_time_seconds");
+
+        if (
+            startTime is null
+            || endTime is null
+            || endTime < startTime)
+        {
+            return;
+        }
+
+        bool isFinal =
+            root.TryGetProperty(
+                "is_final",
+                out JsonElement finalElement)
+            &&
+            (
+                finalElement.ValueKind ==
+                    JsonValueKind.True
+                ||
+                finalElement.ValueKind ==
+                    JsonValueKind.False
+            )
+            &&
+            finalElement.GetBoolean();
+
+        double? confidence =
+            TryReadNonNegativeDouble(
+                root,
+                "confidence");
+
+        if (confidence is > 1.0)
+        {
+            confidence = null;
+        }
+
+        var activity =
+            new SpeakerActivity(
+                ActivityId: activityId,
+                Sequence: sequence,
+                SpeakerId: speakerId,
+                StartTime: startTime.Value,
+                EndTime: endTime.Value,
+                IsFinal: isFinal,
+                Confidence: confidence);
+
+        ActivityReceived?.Invoke(
+            this,
+            new SpeakerActivityEventArgs(
+                activity));
     }
 
     private void ProcessTranscriptMessage(

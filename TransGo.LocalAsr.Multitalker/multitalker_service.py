@@ -37,6 +37,7 @@ MODEL_SAMPLE_RATE = 16_000
 MAX_SPEAKERS = 4
 
 FINAL_SILENCE_SECONDS = 2.0
+SPEAKER_ACTIVITY_THRESHOLD = 0.5
 
 
 def normalize_text(text: object) -> str:
@@ -377,6 +378,14 @@ class LiveMultitalkerSession:
         self.step_num = 0
         self.result_sequence = 0
 
+        self.activity_sequence = 0
+        self._activity_counter = 0
+
+        self._open_speaker_activities: dict[
+            str,
+            dict[str, object],
+        ] = {}
+
         self._last_emitted: dict[
             str,
             tuple[object, ...],
@@ -404,6 +413,269 @@ class LiveMultitalkerSession:
             * self.hop_samples
             / MODEL_SAMPLE_RATE
         )
+
+    def _collect_speaker_activity_updates(
+        self,
+        *,
+        finalize_all: bool = False,
+    ) -> list[dict[str, object]]:
+        updates: list[
+            dict[str, object]
+        ] = []
+
+        def emit_activity(
+            speaker_id: str,
+            state: dict[str, object],
+            *,
+            is_final: bool,
+        ) -> None:
+            self.activity_sequence += 1
+
+            confidence_sum = float(
+                state["confidence_sum"]
+            )
+
+            confidence_count = int(
+                state["confidence_count"]
+            )
+
+            confidence = (
+                confidence_sum
+                / confidence_count
+                if confidence_count > 0
+                else 0.0
+            )
+
+            updates.append(
+                {
+                    "type": "speaker_activity",
+                    "activity_id": (
+                        state["activity_id"]
+                    ),
+                    "sequence": (
+                        self.activity_sequence
+                    ),
+                    "speaker_id": speaker_id,
+                    "start_time_seconds": round(
+                        float(
+                            state[
+                                "start_time_seconds"
+                            ]
+                        ),
+                        3,
+                    ),
+                    "end_time_seconds": round(
+                        float(
+                            state[
+                                "end_time_seconds"
+                            ]
+                        ),
+                        3,
+                    ),
+                    "is_final": is_final,
+                    "confidence": round(
+                        confidence,
+                        4,
+                    ),
+                }
+            )
+
+        if finalize_all:
+            for speaker_id in sorted(
+                self._open_speaker_activities
+            ):
+                emit_activity(
+                    speaker_id,
+                    self._open_speaker_activities[
+                        speaker_id
+                    ],
+                    is_final=True,
+                )
+
+            self._open_speaker_activities.clear()
+
+            return updates
+
+        diar_states = (
+            self.streamer
+            .instance_manager
+            .diar_states
+        )
+
+        if (
+            diar_states is None
+            or diar_states.previous_chunk_preds
+            is None
+        ):
+            return updates
+
+        predictions = (
+            diar_states.previous_chunk_preds
+        )
+
+        if (
+            predictions.ndim != 3
+            or predictions.shape[0] == 0
+            or predictions.shape[1] == 0
+        ):
+            return updates
+
+        fresh_frame_count = min(
+            int(
+                self.streamer
+                ._frame_hop_length
+            ),
+            int(predictions.shape[1]),
+        )
+
+        if fresh_frame_count <= 0:
+            return updates
+
+        fresh_predictions = (
+            predictions[
+                0,
+                -fresh_frame_count:,
+                :MAX_SPEAKERS,
+            ]
+            .detach()
+            .float()
+            .cpu()
+        )
+
+        hop_end_time = (
+            self.processed_audio_seconds
+        )
+
+        hop_duration = (
+            self.hop_samples
+            / MODEL_SAMPLE_RATE
+        )
+
+        frame_seconds = (
+            hop_duration
+            / fresh_frame_count
+        )
+
+        hop_start_time = max(
+            0.0,
+            hop_end_time - hop_duration,
+        )
+
+        speaker_count = int(
+            fresh_predictions.shape[1]
+        )
+
+        for speaker_index in range(
+            speaker_count
+        ):
+            speaker_id = (
+                f"speaker-{speaker_index + 1}"
+            )
+
+            state = (
+                self._open_speaker_activities
+                .get(speaker_id)
+            )
+
+            for frame_index in range(
+                fresh_frame_count
+            ):
+                confidence = float(
+                    fresh_predictions[
+                        frame_index,
+                        speaker_index,
+                    ].item()
+                )
+
+                frame_start_time = (
+                    hop_start_time
+                    + frame_index
+                    * frame_seconds
+                )
+
+                frame_end_time = min(
+                    hop_end_time,
+                    frame_start_time
+                    + frame_seconds,
+                )
+
+                if (
+                    confidence
+                    > SPEAKER_ACTIVITY_THRESHOLD
+                ):
+                    if state is None:
+                        self._activity_counter += 1
+
+                        state = {
+                            "activity_id": (
+                                "multitalker-"
+                                f"{speaker_id}-"
+                                f"{self._activity_counter:06d}"
+                            ),
+                            "start_time_seconds": (
+                                frame_start_time
+                            ),
+                            "end_time_seconds": (
+                                frame_end_time
+                            ),
+                            "confidence_sum": (
+                                confidence
+                            ),
+                            "confidence_count": 1,
+                        }
+
+                        self._open_speaker_activities[
+                            speaker_id
+                        ] = state
+                    else:
+                        state[
+                            "end_time_seconds"
+                        ] = frame_end_time
+
+                        state[
+                            "confidence_sum"
+                        ] = (
+                            float(
+                                state[
+                                    "confidence_sum"
+                                ]
+                            )
+                            + confidence
+                        )
+
+                        state[
+                            "confidence_count"
+                        ] = (
+                            int(
+                                state[
+                                    "confidence_count"
+                                ]
+                            )
+                            + 1
+                        )
+
+                elif state is not None:
+                    emit_activity(
+                        speaker_id,
+                        state,
+                        is_final=True,
+                    )
+
+                    self._open_speaker_activities.pop(
+                        speaker_id,
+                        None,
+                    )
+
+                    state = None
+
+            if state is not None:
+                emit_activity(
+                    speaker_id,
+                    state,
+                    is_final=False,
+                )
+
+        return updates
 
     def _collect_updates(
         self,
@@ -683,11 +955,19 @@ class LiveMultitalkerSession:
 
         self.step_num += 1
 
-        return self._collect_updates(
-            processing_milliseconds=(
-                processing_milliseconds
+        updates = (
+            self._collect_speaker_activity_updates()
+        )
+
+        updates.extend(
+            self._collect_updates(
+                processing_milliseconds=(
+                    processing_milliseconds
+                )
             )
         )
+
+        return updates
 
     def accept_audio(
         self,
@@ -770,6 +1050,12 @@ class LiveMultitalkerSession:
                     is_buffer_empty=True,
                 )
             )
+
+        updates.extend(
+            self._collect_speaker_activity_updates(
+                finalize_all=True,
+            )
+        )
 
         updates.extend(
             self._collect_updates(

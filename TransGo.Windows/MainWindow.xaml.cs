@@ -643,6 +643,13 @@ public partial class MainWindow : Window
         engine.ResultReceived +=
             TranscriptionEngine_ResultReceived;
 
+        if (engine is ISpeakerActivitySource
+            speakerActivitySource)
+        {
+            speakerActivitySource.ActivityReceived +=
+                DiarizationEngine_ActivityReceived;
+        }
+
         IDiarizationEngine? diarizationEngine =
             CreateSelectedDiarizationEngine();
 
@@ -660,6 +667,7 @@ public partial class MainWindow : Window
             _audioNormalizer.Reset();
 
             _speakerActivities.Clear();
+            UpdateActiveSpeakersIndicator();
 
             _overlapDetector.Reset();
             _overlapAudioBuffer.Reset();
@@ -1106,6 +1114,13 @@ public partial class MainWindow : Window
                 exception);
         }
 
+        if (!Dispatcher.HasShutdownStarted)
+        {
+            Dispatcher.BeginInvoke(
+                new Action(
+                    UpdateActiveSpeakersIndicator));
+        }
+
         if (activity.IsFinal)
         {
             Debug.WriteLine(
@@ -1114,6 +1129,78 @@ public partial class MainWindow : Window
                 $"{activity.StartTime.TotalSeconds:0.0}s–" +
                 $"{activity.EndTime.TotalSeconds:0.0}s");
         }
+    }
+
+    private void UpdateActiveSpeakersIndicator()
+    {
+        string[] activeSpeakerIds =
+            _speakerActivities
+                .Values
+                .Where(
+                    activity =>
+                        !activity.IsFinal)
+                .Select(
+                    activity =>
+                        activity.SpeakerId)
+                .Where(
+                    speakerId =>
+                        !string.IsNullOrWhiteSpace(
+                            speakerId))
+                .Distinct(
+                    StringComparer.OrdinalIgnoreCase)
+                .OrderBy(
+                    speakerId =>
+                        speakerId,
+                    StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+        ActiveSpeakersText.Inlines.Clear();
+
+        if (activeSpeakerIds.Length == 0)
+        {
+            ActiveSpeakersText.Visibility =
+                Visibility.Collapsed;
+
+            return;
+        }
+
+        for (
+            int index = 0;
+            index < activeSpeakerIds.Length;
+            index++)
+        {
+            if (index > 0)
+            {
+                ActiveSpeakersText.Inlines.Add(
+                    new Run("    "));
+            }
+
+            string speakerLabel =
+                FormatSpeakerLabel(
+                    activeSpeakerIds[index]);
+
+            Brush speakerBrush =
+                GetTranscriptSpeakerBrush(
+                    speakerLabel);
+
+            ActiveSpeakersText.Inlines.Add(
+                new Run("\u25CF ")
+                {
+                    Foreground = speakerBrush,
+                });
+
+            ActiveSpeakersText.Inlines.Add(
+                new Run(
+                    $"{speakerLabel} speaking")
+                {
+                    Foreground = speakerBrush,
+                    FontWeight =
+                        FontWeights.SemiBold,
+                });
+        }
+
+        ActiveSpeakersText.Visibility =
+            Visibility.Visible;
     }
 
     private void OverlapDetector_RegionUpdated(
@@ -1852,6 +1939,13 @@ public partial class MainWindow : Window
         }
         finally
         {
+            if (engine is ISpeakerActivitySource
+                speakerActivitySource)
+            {
+                speakerActivitySource.ActivityReceived -=
+                    DiarizationEngine_ActivityReceived;
+            }
+
             engine.ResultReceived -=
                 TranscriptionEngine_ResultReceived;
 
