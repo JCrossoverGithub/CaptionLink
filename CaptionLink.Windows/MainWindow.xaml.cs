@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
@@ -73,8 +74,15 @@ public partial class MainWindow : Window
         _parakeetPreloader =
             new(LocalServiceRuntime);
 
+    private readonly WslLocalGpuServiceShutdown
+        _localGpuServiceShutdown =
+            new(LocalServiceRuntime);
+
     private readonly CancellationTokenSource
         _windowCancellation = new();
+
+    private bool _shutdownInProgress;
+    private bool _shutdownComplete;
 
     private int _transcriptionDisconnectHandled;
 
@@ -98,7 +106,6 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         Loaded += MainWindow_Loaded;
-        Closed += MainWindow_Closed;
 
         _captionOverlay =
             new CaptionOverlayWindow();
@@ -439,16 +446,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void MainWindow_Closed(
-        object? sender,
-        EventArgs eventArgs)
-    {
-        _windowCancellation.Cancel();
-
-        await _parakeetPreloader.DisposeAsync();
-
-        _windowCancellation.Dispose();
-    }
     private string GetSelectedProviderName()
     {
         if (TranscriptionProviderComboBox.SelectedItem
@@ -1982,7 +1979,113 @@ public partial class MainWindow : Window
         UpdateProviderDependentControls();
     }
 
-    protected override async void OnClosed(
+    protected override async void OnClosing(
+        CancelEventArgs e)
+    {
+        if (_shutdownComplete)
+        {
+            base.OnClosing(e);
+            return;
+        }
+
+        e.Cancel = true;
+
+        if (_shutdownInProgress)
+        {
+            return;
+        }
+
+        _shutdownInProgress = true;
+
+        IsEnabled = false;
+        StatusText.Text =
+            "Shutting down local services...";
+
+        try
+        {
+            await ShutdownApplicationAsync();
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(
+                "CaptionLink application shutdown failed: " +
+                exception);
+        }
+        finally
+        {
+            _shutdownComplete = true;
+            _shutdownInProgress = false;
+
+            Close();
+        }
+    }
+
+    private async Task ShutdownApplicationAsync()
+    {
+        _windowCancellation.Cancel();
+
+        try
+        {
+            if (_captureEngine.IsCapturing)
+            {
+                _captureEngine.Stop();
+            }
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(
+                "Audio capture shutdown failed: " +
+                exception);
+        }
+
+        try
+        {
+            await DisposeDiarizationEngineAsync();
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(
+                "Speaker attribution shutdown failed: " +
+                exception);
+        }
+
+        try
+        {
+            await DisposeTranscriptionEngineAsync();
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(
+                "Transcription shutdown failed: " +
+                exception);
+        }
+
+        try
+        {
+            await _parakeetPreloader.DisposeAsync();
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(
+                "Parakeet preloader shutdown failed: " +
+                exception);
+        }
+
+        try
+        {
+            await _localGpuServiceShutdown.StopAsync();
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(
+                "Local GPU service shutdown failed: " +
+                exception);
+        }
+
+        _windowCancellation.Dispose();
+    }
+
+    protected override void OnClosed(
         EventArgs e)
     {
         _captureEngine.AudioFrameAvailable -=
@@ -2016,18 +2119,6 @@ public partial class MainWindow : Window
         _captionOverlay.Close();
 
         base.OnClosed(e);
-
-        try
-        {
-            await DisposeDiarizationEngineAsync();
-            await DisposeTranscriptionEngineAsync();
-        }
-        catch (Exception exception)
-        {
-            Debug.WriteLine(
-                "Transcription or speaker attribution " +
-                $"cleanup failed: {exception}");
-        }
 
         _overlapDetector.RegionUpdated -=
             OverlapDetector_RegionUpdated;
