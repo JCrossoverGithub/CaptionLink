@@ -262,6 +262,10 @@ The current architecture work is focused on:
 4. preparing native macOS and Linux hosts,
 5. improving public setup, CI, packaging, and release reproducibility.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development and contribution guidance.
+
 ## License
 
-A project license will be added before the repository is made public.
+TransGo is licensed under the [MIT License](LICENSE).
