@@ -8,7 +8,7 @@ namespace TransGo.Diarization.Sortformer;
 /// until the GPU model is ready.
 /// </summary>
 public sealed class SortformerServiceLauncher
-    : IAsyncDisposable
+    : ISortformerServiceLauncher
 {
     private const string ServiceDirectoryName =
         "TransGo.LocalDiarization.Sortformer";

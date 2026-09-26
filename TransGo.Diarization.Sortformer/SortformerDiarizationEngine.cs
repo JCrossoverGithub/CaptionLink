@@ -14,8 +14,8 @@ public sealed class SortformerDiarizationEngine
 {
     private readonly object _gate = new();
 
-    private readonly SortformerServiceLauncher
-        _serviceLauncher = new();
+    private readonly ISortformerServiceLauncher
+        _serviceLauncher;
 
     private SortformerServiceClient? _client;
     private int? _configuredSampleRate;
@@ -23,6 +23,22 @@ public sealed class SortformerDiarizationEngine
     private bool _isStarting;
     private bool _isRunning;
     private bool _disposed;
+
+    public SortformerDiarizationEngine()
+        : this(
+            new SortformerServiceLauncher())
+    {
+    }
+
+    public SortformerDiarizationEngine(
+        ISortformerServiceLauncher serviceLauncher)
+    {
+        ArgumentNullException.ThrowIfNull(
+            serviceLauncher);
+
+        _serviceLauncher =
+            serviceLauncher;
+    }
 
     public event EventHandler<SpeakerActivityEventArgs>?
         ActivityReceived;
