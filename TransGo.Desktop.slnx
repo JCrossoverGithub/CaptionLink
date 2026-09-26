@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="TransGo.Application.Tests/TransGo.Application.Tests.csproj" />
   <Project Path="TransGo.Application/TransGo.Application.csproj" />
   <Project Path="TransGo.Audio.Processing/TransGo.Audio.Processing.csproj" />
   <Project Path="TransGo.Audio.Windows/TransGo.Audio.Windows.csproj" />
