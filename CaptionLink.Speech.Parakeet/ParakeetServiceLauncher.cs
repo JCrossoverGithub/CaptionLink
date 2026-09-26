@@ -155,11 +155,11 @@ public sealed class ParakeetServiceLauncher
             ">/dev/null 2>&1 || true; " +
             $"{NemoPythonSetup} " +
             "&& test -x \"$NEMO_PYTHON\" " +
-            $"&& cd {PosixShell.QuoteArgument(repositoryDirectory)} " +
+            "&& cd \"$HOME\" " +
             $"&& export CAPTIONLINK_PARAKEET_PROFILE=" +
             $"{PosixShell.QuoteArgument(serviceProfile)} " +
             "&& exec \"$NEMO_PYTHON\" " +
-            "-m uvicorn parakeet_service:app " +
+            $"-m uvicorn parakeet_service:app --app-dir {PosixShell.QuoteArgument(repositoryDirectory)} " +
             "--host 127.0.0.1 " +
             "--port 8765";
 
