@@ -5,7 +5,7 @@ using TransGo.Core.Runtime;
 namespace TransGo.Speech.Parakeet;
 
 internal sealed class MultitalkerParakeetServiceLauncher
-    : IAsyncDisposable
+    : IMultitalkerParakeetServiceLauncher
 {
     private const string ServiceDirectoryName =
         "TransGo.LocalAsr.Multitalker";

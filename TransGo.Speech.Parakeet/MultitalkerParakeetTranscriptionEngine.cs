@@ -15,8 +15,8 @@ public sealed class MultitalkerParakeetTranscriptionEngine
 
     private readonly object _gate = new();
 
-    private readonly MultitalkerParakeetServiceLauncher
-        _serviceLauncher = new();
+    private readonly IMultitalkerParakeetServiceLauncher
+        _serviceLauncher;
 
     private ParakeetServiceClient? _client;
     private int? _configuredSampleRate;
@@ -24,6 +24,22 @@ public sealed class MultitalkerParakeetTranscriptionEngine
     private bool _isStarting;
     private bool _isRunning;
     private bool _disposed;
+
+    public MultitalkerParakeetTranscriptionEngine()
+        : this(
+            new MultitalkerParakeetServiceLauncher())
+    {
+    }
+
+    public MultitalkerParakeetTranscriptionEngine(
+        IMultitalkerParakeetServiceLauncher serviceLauncher)
+    {
+        ArgumentNullException.ThrowIfNull(
+            serviceLauncher);
+
+        _serviceLauncher =
+            serviceLauncher;
+    }
 
     public event EventHandler<TranscriptResultEventArgs>?
         ResultReceived;
