@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import wave
 
 import websockets
@@ -9,10 +10,19 @@ import websockets
 
 SERVICE_URI = "ws://127.0.0.1:8766/stream"
 
-AUDIO_PATH = (
-    "/mnt/c/Users/user/Documents/TransGo-Test-Data/"
-    "AMI/ES2013a.test-300-420s.wav"
+AUDIO_PATH_ENVIRONMENT_VARIABLE = (
+    "TRANSGO_SORTFORMER_TEST_AUDIO"
 )
+
+AUDIO_PATH = os.environ.get(
+    AUDIO_PATH_ENVIRONMENT_VARIABLE
+)
+
+if not AUDIO_PATH:
+    raise RuntimeError(
+        f"Set {AUDIO_PATH_ENVIRONMENT_VARIABLE} "
+        "to the AMI test WAV path."
+    )
 
 TEST_DURATION_SECONDS = 30
 CHUNK_DURATION_SECONDS = 0.1

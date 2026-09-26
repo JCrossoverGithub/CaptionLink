@@ -234,6 +234,7 @@ async def receive_transcripts(
 async def run_clip(
     websocket_url: str,
     audio_path: Path,
+    result_audio_path: Path,
     reference: str,
     chunk_ms: int,
     pace: float,
@@ -359,7 +360,7 @@ async def run_clip(
     )
 
     return {
-        "audio_path": str(audio_path),
+        "audio_path": str(result_audio_path),
         "audio_duration_seconds": round(
             audio_duration_seconds,
             3,
@@ -659,6 +660,7 @@ async def async_main() -> int:
                 result = await run_clip(
                     websocket_url=args.ws_url,
                     audio_path=audio_path,
+                    result_audio_path=relative_audio_path,
                     reference=str(item["reference"]),
                     chunk_ms=args.chunk_ms,
                     pace=args.pace,

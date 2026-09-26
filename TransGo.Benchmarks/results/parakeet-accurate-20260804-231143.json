@@ -36,7 +36,7 @@
   "failure": null,
   "clips": [
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/1089/134686/1089-134686-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/1089/134686/1089-134686-0000.flac",
       "audio_duration_seconds": 10.435,
       "sample_rate": 16000,
       "reference": "HE HOPED THERE WOULD BE STEW FOR DINNER TURNIPS AND CARROTS AND BRUISED POTATOES AND FAT MUTTON PIECES TO BE LADLED OUT IN THICK PEPPERED FLOUR FATTENED SAUCE",
@@ -77,7 +77,7 @@
       "chapter_id": "134686"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/1188/133604/1188-133604-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/1188/133604/1188-133604-0000.flac",
       "audio_duration_seconds": 10.725,
       "sample_rate": 16000,
       "reference": "YOU WILL FIND ME CONTINUALLY SPEAKING OF FOUR MEN TITIAN HOLBEIN TURNER AND TINTORET IN ALMOST THE SAME TERMS",
@@ -118,7 +118,7 @@
       "chapter_id": "133604"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/121/121726/121-121726-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/121/121726/121-121726-0000.flac",
       "audio_duration_seconds": 8.46,
       "sample_rate": 16000,
       "reference": "ALSO A POPULAR CONTRIVANCE WHEREBY LOVE MAKING MAY BE SUSPENDED BUT NOT STOPPED DURING THE PICNIC SEASON",
@@ -159,7 +159,7 @@
       "chapter_id": "121726"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/1221/135766/1221-135766-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/1221/135766/1221-135766-0000.flac",
       "audio_duration_seconds": 12.435,
       "sample_rate": 16000,
       "reference": "HOW STRANGE IT SEEMED TO THE SAD WOMAN AS SHE WATCHED THE GROWTH AND THE BEAUTY THAT BECAME EVERY DAY MORE BRILLIANT AND THE INTELLIGENCE THAT THREW ITS QUIVERING SUNSHINE OVER THE TINY FEATURES OF THIS CHILD",
@@ -200,7 +200,7 @@
       "chapter_id": "135766"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/1284/1180/1284-1180-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/1284/1180/1284-1180-0000.flac",
       "audio_duration_seconds": 8.12,
       "sample_rate": 16000,
       "reference": "HE WORE BLUE SILK STOCKINGS BLUE KNEE PANTS WITH GOLD BUCKLES A BLUE RUFFLED WAIST AND A JACKET OF BRIGHT BLUE BRAIDED WITH GOLD",
@@ -241,7 +241,7 @@
       "chapter_id": "1180"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/1320/122612/1320-122612-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/1320/122612/1320-122612-0000.flac",
       "audio_duration_seconds": 13.48,
       "sample_rate": 16000,
       "reference": "SINCE THE PERIOD OF OUR TALE THE ACTIVE SPIRIT OF THE COUNTRY HAS SURROUNDED IT WITH A BELT OF RICH AND THRIVING SETTLEMENTS THOUGH NONE BUT THE HUNTER OR THE SAVAGE IS EVER KNOWN EVEN NOW TO PENETRATE ITS WILD RECESSES",
@@ -282,7 +282,7 @@
       "chapter_id": "122612"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/1580/141083/1580-141083-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/1580/141083/1580-141083-0000.flac",
       "audio_duration_seconds": 8.94,
       "sample_rate": 16000,
       "reference": "I WILL ENDEAVOUR IN MY STATEMENT TO AVOID SUCH TERMS AS WOULD SERVE TO LIMIT THE EVENTS TO ANY PARTICULAR PLACE OR GIVE A CLUE AS TO THE PEOPLE CONCERNED",
@@ -323,7 +323,7 @@
       "chapter_id": "141083"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/1995/1826/1995-1826-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/1995/1826/1995-1826-0000.flac",
       "audio_duration_seconds": 9.485,
       "sample_rate": 16000,
       "reference": "IN THE DEBATE BETWEEN THE SENIOR SOCIETIES HER DEFENCE OF THE FIFTEENTH AMENDMENT HAD BEEN NOT ONLY A NOTABLE BIT OF REASONING BUT DELIVERED WITH REAL ENTHUSIASM",
@@ -364,7 +364,7 @@
       "chapter_id": "1826"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/2094/142345/2094-142345-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/2094/142345/2094-142345-0000.flac",
       "audio_duration_seconds": 22.57,
       "sample_rate": 16000,
       "reference": "IT IS A VERY FINE OLD PLACE OF RED BRICK SOFTENED BY A PALE POWDERY LICHEN WHICH HAS DISPERSED ITSELF WITH HAPPY IRREGULARITY SO AS TO BRING THE RED BRICK INTO TERMS OF FRIENDLY COMPANIONSHIP WITH THE LIMESTONE ORNAMENTS SURROUNDING THE THREE GABLES THE WINDOWS AND THE DOOR PLACE",
@@ -405,7 +405,7 @@
       "chapter_id": "142345"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/2300/131720/2300-131720-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/2300/131720/2300-131720-0000.flac",
       "audio_duration_seconds": 5.08,
       "sample_rate": 16000,
       "reference": "THE PARIS PLANT LIKE THAT AT THE CRYSTAL PALACE WAS A TEMPORARY EXHIBIT",
@@ -446,7 +446,7 @@
       "chapter_id": "131720"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/237/126133/237-126133-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/237/126133/237-126133-0000.flac",
       "audio_duration_seconds": 13.29,
       "sample_rate": 16000,
       "reference": "HERE SHE WOULD STAY COMFORTED AND SOOTHED AMONG THE LOVELY PLANTS AND RICH EXOTICS REJOICING THE HEART OF OLD TURNER THE GARDENER WHO SINCE POLLY'S FIRST RAPTUROUS ENTRANCE HAD TAKEN HER INTO HIS GOOD GRACES FOR ALL TIME",
@@ -487,7 +487,7 @@
       "chapter_id": "126133"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/260/123286/260-123286-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/260/123286/260-123286-0000.flac",
       "audio_duration_seconds": 7.04,
       "sample_rate": 16000,
       "reference": "SATURDAY AUGUST FIFTEENTH THE SEA UNBROKEN ALL ROUND NO LAND IN SIGHT",
@@ -528,7 +528,7 @@
       "chapter_id": "123286"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/2830/3979/2830-3979-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/2830/3979/2830-3979-0000.flac",
       "audio_duration_seconds": 6.12,
       "sample_rate": 16000,
       "reference": "WE WANT YOU TO HELP US PUBLISH SOME LEADING WORK OF LUTHER'S FOR THE GENERAL AMERICAN MARKET WILL YOU DO IT",
@@ -569,7 +569,7 @@
       "chapter_id": "3979"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/2961/960/2961-960-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/2961/960/2961-960-0000.flac",
       "audio_duration_seconds": 27.18,
       "sample_rate": 16000,
       "reference": "HE PASSES ABRUPTLY FROM PERSONS TO IDEAS AND NUMBERS AND FROM IDEAS AND NUMBERS TO PERSONS FROM THE HEAVENS TO MAN FROM ASTRONOMY TO PHYSIOLOGY HE CONFUSES OR RATHER DOES NOT DISTINGUISH SUBJECT AND OBJECT FIRST AND FINAL CAUSES AND IS DREAMING OF GEOMETRICAL FIGURES LOST IN A FLUX OF SENSE",
@@ -610,7 +610,7 @@
       "chapter_id": "960"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/3570/5694/3570-5694-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/3570/5694/3570-5694-0000.flac",
       "audio_duration_seconds": 12.085,
       "sample_rate": 16000,
       "reference": "BUT ALREADY AT A POINT IN ECONOMIC EVOLUTION FAR ANTEDATING THE EMERGENCE OF THE LADY SPECIALISED CONSUMPTION OF GOODS AS AN EVIDENCE OF PECUNIARY STRENGTH HAD BEGUN TO WORK OUT IN A MORE OR LESS ELABORATE SYSTEM",
@@ -651,7 +651,7 @@
       "chapter_id": "5694"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/3575/170457/3575-170457-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/3575/170457/3575-170457-0000.flac",
       "audio_duration_seconds": 8.23,
       "sample_rate": 16000,
       "reference": "AND OFTEN HAS MY MOTHER SAID WHILE ON HER LAP I LAID MY HEAD SHE FEARED FOR TIME I WAS NOT MADE BUT FOR ETERNITY",
@@ -692,7 +692,7 @@
       "chapter_id": "170457"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/3729/6852/3729-6852-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/3729/6852/3729-6852-0000.flac",
       "audio_duration_seconds": 11.17,
       "sample_rate": 16000,
       "reference": "TO CELEBRATE THE ARRIVAL OF HER SON SILVIA GAVE A SPLENDID SUPPER TO WHICH SHE HAD INVITED ALL HER RELATIVES AND IT WAS A GOOD OPPORTUNITY FOR ME TO MAKE THEIR ACQUAINTANCE",
@@ -733,7 +733,7 @@
       "chapter_id": "6852"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/4077/13751/4077-13751-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/4077/13751/4077-13751-0000.flac",
       "audio_duration_seconds": 9.56,
       "sample_rate": 16000,
       "reference": "ON THE SIXTH OF APRIL EIGHTEEN THIRTY THE CHURCH OF JESUS CHRIST OF LATTER DAY SAINTS WAS FORMALLY ORGANIZED AND THUS TOOK ON A LEGAL EXISTENCE",
@@ -774,7 +774,7 @@
       "chapter_id": "13751"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/4446/2271/4446-2271-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/4446/2271/4446-2271-0000.flac",
       "audio_duration_seconds": 3.495,
       "sample_rate": 16000,
       "reference": "MAINHALL LIKED ALEXANDER BECAUSE HE WAS AN ENGINEER",
@@ -815,7 +815,7 @@
       "chapter_id": "2271"
     },
     {
-      "audio_path": "/mnt/c/Users/user/Documents/Projects/TransGo.Desktop/TransGo.Benchmarks/audio/librispeech/LibriSpeech/test-clean/4507/16021/4507-16021-0000.flac",
+      "audio_path": "audio/librispeech/LibriSpeech/test-clean/4507/16021/4507-16021-0000.flac",
       "audio_duration_seconds": 2.59,
       "sample_rate": 16000,
       "reference": "CHAPTER ONE ORIGIN",
