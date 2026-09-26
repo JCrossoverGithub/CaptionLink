@@ -186,7 +186,7 @@ For repository discovery, CaptionLink normally finds `CaptionLink.slnx` by walki
 If needed, set:
 
 ~~~text
-TRANSGO_REPOSITORY_ROOT
+CAPTIONLINK_REPOSITORY_ROOT
 ~~~
 
 to the Windows path of the repository clone.
@@ -209,14 +209,14 @@ These endpoints are implementation details for local development rather than pub
 The GPU gateway requires:
 
 ~~~text
-TRANSGO_GATEWAY_TOKEN
+CAPTIONLINK_GATEWAY_TOKEN
 ~~~
 
 Remote CaptionLink clients can use:
 
 ~~~text
-TRANSGO_REMOTE_GATEWAY_URL
-TRANSGO_REMOTE_GATEWAY_TOKEN
+CAPTIONLINK_REMOTE_GATEWAY_URL
+CAPTIONLINK_REMOTE_GATEWAY_TOKEN
 ~~~
 
 Do not commit real tokens or credentials to the repository.

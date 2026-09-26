@@ -156,7 +156,7 @@ public sealed class ParakeetServiceLauncher
             $"{NemoPythonSetup} " +
             "&& test -x \"$NEMO_PYTHON\" " +
             $"&& cd {PosixShell.QuoteArgument(repositoryDirectory)} " +
-            $"&& export TRANSGO_PARAKEET_PROFILE=" +
+            $"&& export CAPTIONLINK_PARAKEET_PROFILE=" +
             $"{PosixShell.QuoteArgument(serviceProfile)} " +
             "&& exec \"$NEMO_PYTHON\" " +
             "-m uvicorn parakeet_service:app " +

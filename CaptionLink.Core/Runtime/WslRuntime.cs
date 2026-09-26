@@ -9,6 +9,9 @@ namespace CaptionLink.Core.Runtime;
 public static class WslRuntime
 {
     private const string RepositoryEnvironmentVariable =
+        "CAPTIONLINK_REPOSITORY_ROOT";
+
+    private const string LegacyRepositoryEnvironmentVariable =
         "TRANSGO_REPOSITORY_ROOT";
 
     private const string SolutionFileName =
@@ -76,6 +79,14 @@ public static class WslRuntime
         string? configuredRoot =
             Environment.GetEnvironmentVariable(
                 RepositoryEnvironmentVariable);
+
+        if (string.IsNullOrWhiteSpace(
+                configuredRoot))
+        {
+            configuredRoot =
+                Environment.GetEnvironmentVariable(
+                    LegacyRepositoryEnvironmentVariable);
+        }
 
         if (!string.IsNullOrWhiteSpace(
                 configuredRoot))

@@ -156,7 +156,7 @@ CaptionLink.slnx
 If CaptionLink is launched from somewhere that prevents automatic discovery, set the Windows environment variable:
 
 ~~~text
-TRANSGO_REPOSITORY_ROOT
+CAPTIONLINK_REPOSITORY_ROOT
 ~~~
 
 to the repository root.
@@ -164,7 +164,7 @@ to the repository root.
 Example:
 
 ~~~powershell
-$env:TRANSGO_REPOSITORY_ROOT =
+$env:CAPTIONLINK_REPOSITORY_ROOT =
     "C:\Users\you\projects\CaptionLink"
 ~~~
 
@@ -197,14 +197,14 @@ ${XDG_DATA_HOME:-$HOME/.local/share}/transgo/transformers-nemotron-deps
 Running the remote GPU gateway requires:
 
 ~~~text
-TRANSGO_GATEWAY_TOKEN
+CAPTIONLINK_GATEWAY_TOKEN
 ~~~
 
 Remote CaptionLink clients use:
 
 ~~~text
-TRANSGO_REMOTE_GATEWAY_URL
-TRANSGO_REMOTE_GATEWAY_TOKEN
+CAPTIONLINK_REMOTE_GATEWAY_URL
+CAPTIONLINK_REMOTE_GATEWAY_TOKEN
 ~~~
 
 Keep real credentials outside source control.
@@ -225,6 +225,6 @@ If the local GPU environment is missing or inconsistent, rerun:
 wsl bash ./scripts/bootstrap-wsl.sh
 ~~~
 
-If the repository cannot be located by a service launcher, set `TRANSGO_REPOSITORY_ROOT`.
+If the repository cannot be located by a service launcher, set `CAPTIONLINK_REPOSITORY_ROOT`.
 
 If CUDA is not visible inside WSL, resolve the Windows/WSL NVIDIA configuration before debugging the CaptionLink services themselves.

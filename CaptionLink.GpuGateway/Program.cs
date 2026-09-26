@@ -9,14 +9,15 @@ using CaptionLink.Speech.Parakeet;
 var builder = WebApplication.CreateBuilder(args);
 
 string gatewayToken =
-    Environment.GetEnvironmentVariable("TRANSGO_GATEWAY_TOKEN")
+    Environment.GetEnvironmentVariable("CAPTIONLINK_GATEWAY_TOKEN")
+    ?? Environment.GetEnvironmentVariable("TRANSGO_GATEWAY_TOKEN")
     ?? builder.Configuration["Gateway:Token"]
     ?? string.Empty;
 
 if (string.IsNullOrWhiteSpace(gatewayToken))
 {
     throw new InvalidOperationException(
-        "Set the TRANSGO_GATEWAY_TOKEN environment variable " +
+        "Set the CAPTIONLINK_GATEWAY_TOKEN environment variable " +
         "before starting the GPU gateway.");
 }
 
@@ -26,9 +27,15 @@ ILocalServiceRuntime localServiceRuntime =
     new WslLocalServiceRuntime();
 
 const string BrowserWebSocketSubprotocol =
-    "transgo-v1";
+    "captionlink-v1";
 
 const string BrowserTokenSubprotocolPrefix =
+    "captionlink-token.";
+
+const string LegacyBrowserWebSocketSubprotocol =
+    "transgo-v1";
+
+const string LegacyBrowserTokenSubprotocolPrefix =
     "transgo-token.";
 
 app.UseWebSockets(
@@ -69,12 +76,29 @@ app.MapGet(
                 context.Request,
                 gatewayToken);
 
-        bool hasValidBrowserToken =
-            HasValidBrowserWebSocketToken(
+        string? browserWebSocketSubprotocol = null;
+
+        if (HasValidBrowserWebSocketToken(
                 context.Request,
                 gatewayToken,
                 BrowserWebSocketSubprotocol,
-                BrowserTokenSubprotocolPrefix);
+                BrowserTokenSubprotocolPrefix))
+        {
+            browserWebSocketSubprotocol =
+                BrowserWebSocketSubprotocol;
+        }
+        else if (HasValidBrowserWebSocketToken(
+                     context.Request,
+                     gatewayToken,
+                     LegacyBrowserWebSocketSubprotocol,
+                     LegacyBrowserTokenSubprotocolPrefix))
+        {
+            browserWebSocketSubprotocol =
+                LegacyBrowserWebSocketSubprotocol;
+        }
+
+        bool hasValidBrowserToken =
+            browserWebSocketSubprotocol is not null;
 
         if (!hasValidBearerToken &&
             !hasValidBrowserToken)
@@ -91,7 +115,7 @@ app.MapGet(
 
         using var socket = hasValidBrowserToken
             ? await context.WebSockets.AcceptWebSocketAsync(
-                BrowserWebSocketSubprotocol)
+                browserWebSocketSubprotocol!)
             : await context.WebSockets.AcceptWebSocketAsync();
 
         await TranscriptionWebSocketSession.RunAsync(

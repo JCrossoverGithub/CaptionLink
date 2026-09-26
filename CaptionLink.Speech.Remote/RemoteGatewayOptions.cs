@@ -7,18 +7,26 @@ public sealed record RemoteGatewayOptions(
     string Token)
 {
     public const string UrlEnvironmentVariable =
-        "TRANSGO_REMOTE_GATEWAY_URL";
+        "CAPTIONLINK_REMOTE_GATEWAY_URL";
 
     public const string TokenEnvironmentVariable =
+        "CAPTIONLINK_REMOTE_GATEWAY_TOKEN";
+
+    private const string LegacyUrlEnvironmentVariable =
+        "TRANSGO_REMOTE_GATEWAY_URL";
+
+    private const string LegacyTokenEnvironmentVariable =
         "TRANSGO_REMOTE_GATEWAY_TOKEN";
 
     public static RemoteGatewayOptions FromEnvironment()
     {
-        string? url = Environment.GetEnvironmentVariable(
-            UrlEnvironmentVariable);
+        string? url = ReadEnvironmentVariable(
+            UrlEnvironmentVariable,
+            LegacyUrlEnvironmentVariable);
 
-        string? token = Environment.GetEnvironmentVariable(
-            TokenEnvironmentVariable);
+        string? token = ReadEnvironmentVariable(
+            TokenEnvironmentVariable,
+            LegacyTokenEnvironmentVariable);
 
         if (string.IsNullOrWhiteSpace(url))
         {
@@ -78,5 +86,22 @@ public sealed record RemoteGatewayOptions(
         return new RemoteGatewayOptions(
             builder.Uri,
             token.Trim());
+    }
+
+    private static string? ReadEnvironmentVariable(
+        string currentName,
+        string legacyName)
+    {
+        string? value =
+            Environment.GetEnvironmentVariable(
+                currentName);
+
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        return Environment.GetEnvironmentVariable(
+            legacyName);
     }
 }

@@ -22,7 +22,8 @@ from parakeet_audio import ModelAudioFrame
 
 MODEL_NAME = "nvidia/parakeet-unified-en-0.6b"
 MODEL_SAMPLE_RATE = 16_000
-PROFILE_ENVIRONMENT_VARIABLE = "TRANSGO_PARAKEET_PROFILE"
+PROFILE_ENVIRONMENT_VARIABLE = "CAPTIONLINK_PARAKEET_PROFILE"
+LEGACY_PROFILE_ENVIRONMENT_VARIABLE = "TRANSGO_PARAKEET_PROFILE"
 
 
 @dataclass(frozen=True)
@@ -50,9 +51,10 @@ STREAMING_PROFILES = {
 
 
 def load_active_profile() -> ParakeetStreamingProfile:
-    requested_profile = os.getenv(
-        PROFILE_ENVIRONMENT_VARIABLE,
-        "accurate",
+    requested_profile = (
+        os.getenv(PROFILE_ENVIRONMENT_VARIABLE)
+        or os.getenv(LEGACY_PROFILE_ENVIRONMENT_VARIABLE)
+        or "accurate"
     ).strip().lower()
 
     profile = STREAMING_PROFILES.get(requested_profile)

@@ -31,7 +31,7 @@ test("does not duplicate the WebSocket path", () => {
 test("encodes the browser token as Base64URL", () => {
   assert.equal(
     protocol.encodeTokenSubprotocol("test token"),
-    "transgo-token.dGVzdCB0b2tlbg");
+    "captionlink-token.dGVzdCB0b2tlbg");
 });
 
 test("creates the exact 24-byte TGAC header", () => {

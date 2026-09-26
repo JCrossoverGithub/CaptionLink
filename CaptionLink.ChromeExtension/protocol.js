@@ -8,8 +8,8 @@
   const AUDIO_CHUNK_SAMPLES =
     SAMPLE_RATE_HZ * AUDIO_CHUNK_MILLISECONDS / 1000;
   const AUDIO_HEADER_BYTES = 24;
-  const BROWSER_SUBPROTOCOL = "transgo-v1";
-  const TOKEN_SUBPROTOCOL_PREFIX = "transgo-token.";
+  const BROWSER_SUBPROTOCOL = "captionlink-v1";
+  const TOKEN_SUBPROTOCOL_PREFIX = "captionlink-token.";
 
   function normalizeGatewayUrl(value) {
     const trimmed = String(value || "").trim();
