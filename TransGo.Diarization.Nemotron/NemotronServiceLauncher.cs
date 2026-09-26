@@ -38,11 +38,6 @@ public sealed class NemotronServiceLauncher
     private Process? _serviceProcess;
     private bool _disposed;
 
-    public NemotronServiceLauncher()
-        : this(new WslLocalServiceRuntime())
-    {
-    }
-
     public NemotronServiceLauncher(
         ILocalServiceRuntime runtime)
     {

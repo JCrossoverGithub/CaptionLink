@@ -34,11 +34,6 @@ public sealed class SortformerServiceLauncher
     private Process? _serviceProcess;
     private bool _disposed;
 
-    public SortformerServiceLauncher()
-        : this(new WslLocalServiceRuntime())
-    {
-    }
-
     public SortformerServiceLauncher(
         ILocalServiceRuntime runtime)
     {

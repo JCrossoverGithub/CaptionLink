@@ -37,11 +37,6 @@ public sealed class ParakeetServiceLauncher
     private Process? _serviceProcess;
     private bool _disposed;
 
-    public ParakeetServiceLauncher()
-        : this(new WslLocalServiceRuntime())
-    {
-    }
-
     public ParakeetServiceLauncher(
         ILocalServiceRuntime runtime)
     {

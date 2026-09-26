@@ -37,11 +37,6 @@ public sealed class MultitalkerParakeetServiceLauncher
     private Process? _serviceProcess;
     private bool _disposed;
 
-    public MultitalkerParakeetServiceLauncher()
-        : this(new WslLocalServiceRuntime())
-    {
-    }
-
     public MultitalkerParakeetServiceLauncher(
         ILocalServiceRuntime runtime)
     {
