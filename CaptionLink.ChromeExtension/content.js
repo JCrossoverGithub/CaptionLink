@@ -1,19 +1,19 @@
 (function initializeCaptionLinkOverlay() {
   "use strict";
 
-  if (globalThis.__transGoOverlayLoaded) {
+  if (globalThis.__captionLinkOverlayLoaded) {
     return;
   }
 
-  globalThis.__transGoOverlayLoaded = true;
+  globalThis.__captionLinkOverlayLoaded = true;
 
   const latency = globalThis.CaptionLinkLatency;
   const captionState = globalThis.CaptionLinkCaptionState;
 
-  document.getElementById("transgo-caption-host")?.remove();
+  document.getElementById("captionlink-caption-host")?.remove();
 
   const host = document.createElement("div");
-  host.id = "transgo-caption-host";
+  host.id = "captionlink-caption-host";
   const shadow = host.attachShadow({ mode: "closed" });
 
   const style = document.createElement("style");

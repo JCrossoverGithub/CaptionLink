@@ -87,4 +87,4 @@ class CaptionLinkPcmProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("transgo-pcm-processor", CaptionLinkPcmProcessor);
+registerProcessor("captionlink-pcm-processor", CaptionLinkPcmProcessor);

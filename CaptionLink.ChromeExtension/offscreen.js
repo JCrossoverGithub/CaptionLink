@@ -109,7 +109,7 @@ async function startCapture({ tabId, streamId, gatewayUrl, token }) {
       session.audioContext.createMediaStreamSource(session.stream);
     session.worklet = new AudioWorkletNode(
       session.audioContext,
-      "transgo-pcm-processor");
+      "captionlink-pcm-processor");
     session.silentGain = session.audioContext.createGain();
     session.silentGain.gain.value = 0;
 

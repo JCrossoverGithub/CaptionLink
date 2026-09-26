@@ -115,7 +115,7 @@ def apply_nemo_decoder_length_guard(pipeline):
     """
     if getattr(
         pipeline,
-        "_transgo_decoder_length_guard_installed",
+        "_captionlink_decoder_length_guard_installed",
         False,
     ):
         return pipeline
@@ -192,7 +192,7 @@ def apply_nemo_decoder_length_guard(pipeline):
         guarded_stateful_transcribe_step
     )
 
-    pipeline._transgo_decoder_length_guard_installed = True
+    pipeline._captionlink_decoder_length_guard_installed = True
 
     return pipeline
 

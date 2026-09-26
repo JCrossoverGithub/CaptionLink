@@ -47,7 +47,7 @@ def normalize_text(text: object) -> str:
     return " ".join(str(text).split())
 
 
-def to_transgo_speaker_id(
+def to_captionlink_speaker_id(
     speaker: object,
 ) -> str | None:
     value = str(speaker)
@@ -777,13 +777,13 @@ class LiveMultitalkerSession:
             speaker_segment_count,
             segment,
         ) in annotated:
-            transgo_speaker_id = (
-                to_transgo_speaker_id(
+            captionlink_speaker_id = (
+                to_captionlink_speaker_id(
                     speaker
                 )
             )
 
-            if transgo_speaker_id is None:
+            if captionlink_speaker_id is None:
                 continue
 
             key = (
@@ -858,14 +858,14 @@ class LiveMultitalkerSession:
                     "type": "transcript",
                     "segment_id": (
                         "multitalker-"
-                        f"{transgo_speaker_id}-"
+                        f"{captionlink_speaker_id}-"
                         f"{index + 1:06d}"
                     ),
                     "sequence": (
                         self.result_sequence
                     ),
                     "speaker_id": (
-                        transgo_speaker_id
+                        captionlink_speaker_id
                     ),
                     "text": text,
                     "is_final": is_final,

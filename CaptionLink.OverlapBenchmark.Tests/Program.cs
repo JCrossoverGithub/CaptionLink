@@ -91,7 +91,7 @@ internal static class Program
     {
         string path = Path.Combine(
             Path.GetTempPath(),
-            $"transgo-{Guid.NewGuid():N}.rttm");
+            $"captionlink-{Guid.NewGuid():N}.rttm");
 
         try
         {
@@ -269,7 +269,7 @@ internal static class Program
     {
         string root = Path.Combine(
             Path.GetTempPath(),
-            $"transgo-trace-{Guid.NewGuid():N}");
+            $"captionlink-trace-{Guid.NewGuid():N}");
 
         try
         {
@@ -402,7 +402,7 @@ internal static class Program
     {
         string path = Path.Combine(
             Path.GetTempPath(),
-            $"transgo-frozen-{Guid.NewGuid():N}.json");
+            $"captionlink-frozen-{Guid.NewGuid():N}.json");
 
         try
         {
@@ -484,7 +484,7 @@ internal static class Program
     {
         string root = Path.Combine(
             Path.GetTempPath(),
-            $"transgo-benchmark-{Guid.NewGuid():N}");
+            $"captionlink-benchmark-{Guid.NewGuid():N}");
 
         try
         {
