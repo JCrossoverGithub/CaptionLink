@@ -17,15 +17,15 @@ const protocol = globalThis.TransGoProtocol;
 
 test("normalizes the Tailscale HTTPS URL", () => {
   assert.equal(
-    protocol.normalizeGatewayUrl("https://mainpc.example.ts.net/"),
-    "wss://mainpc.example.ts.net/v1/transcription");
+    protocol.normalizeGatewayUrl("https://gpu-gateway.example.ts.net/"),
+    "wss://gpu-gateway.example.ts.net/v1/transcription");
 });
 
 test("does not duplicate the WebSocket path", () => {
   assert.equal(
     protocol.normalizeGatewayUrl(
-      "wss://mainpc.example.ts.net/v1/transcription"),
-    "wss://mainpc.example.ts.net/v1/transcription");
+      "wss://gpu-gateway.example.ts.net/v1/transcription"),
+    "wss://gpu-gateway.example.ts.net/v1/transcription");
 });
 
 test("encodes the browser token as Base64URL", () => {
