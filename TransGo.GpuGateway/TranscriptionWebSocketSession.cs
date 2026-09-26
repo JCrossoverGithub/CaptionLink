@@ -6,7 +6,6 @@ using TransGo.Core.Audio;
 using TransGo.Core.Transcription;
 using TransGo.Remote.Protocol;
 using TransGo.Remote.Protocol.Messages;
-using TransGo.Speech.Parakeet;
 
 namespace TransGo.GpuGateway;
 
@@ -18,9 +17,11 @@ internal static class TranscriptionWebSocketSession
 
     public static async Task RunAsync(
         WebSocket socket,
+        Func<ITranscriptionEngine> engineFactory,
         CancellationToken requestAborted)
     {
         ArgumentNullException.ThrowIfNull(socket);
+        ArgumentNullException.ThrowIfNull(engineFactory);
 
         Channel<IRemoteProtocolMessage> outbound =
             Channel.CreateUnbounded<IRemoteProtocolMessage>(
@@ -112,7 +113,7 @@ internal static class TranscriptionWebSocketSession
                 new GatewayLatencyTracker();
 
             engine =
-                new ParakeetStreamingTranscriptionEngine();
+                engineFactory();
 
             resultHandler =
                 (_, eventArgs) =>

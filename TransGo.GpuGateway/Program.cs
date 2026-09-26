@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using TransGo.GpuGateway;
 using TransGo.Remote.Protocol;
+using TransGo.Speech.Parakeet;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,6 +92,7 @@ app.MapGet(
 
         await TranscriptionWebSocketSession.RunAsync(
             socket,
+            () => new ParakeetStreamingTranscriptionEngine(),
             context.RequestAborted);
     });
 
