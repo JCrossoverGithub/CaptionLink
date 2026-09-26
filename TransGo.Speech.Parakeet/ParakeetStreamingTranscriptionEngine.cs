@@ -7,7 +7,7 @@ namespace TransGo.Speech.Parakeet;
 
 /// <summary>
 /// Sends normalized TransGo audio to the persistent local
-/// Parakeet service running inside WSL.
+/// Parakeet service.
 /// </summary>
 public sealed class ParakeetStreamingTranscriptionEngine
     : ITranscriptionEngine

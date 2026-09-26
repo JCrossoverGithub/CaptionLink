@@ -4,8 +4,8 @@ using TransGo.Core.Runtime;
 namespace TransGo.Speech.Parakeet;
 
 /// <summary>
-/// Starts the local Parakeet service through WSL and ensures
-/// that the requested streaming profile is loaded.
+/// Starts the local Parakeet service through the configured
+/// runtime and ensures that the requested streaming profile is loaded.
 /// </summary>
 public sealed class ParakeetServiceLauncher
     : IParakeetServiceLauncher
@@ -186,8 +186,8 @@ public sealed class ParakeetServiceLauncher
             process.Dispose();
 
             throw new InvalidOperationException(
-                "Windows could not start the Parakeet " +
-                "service through WSL.");
+                "The configured runtime could not start the " +
+                "Parakeet service.");
         }
 
         process.BeginOutputReadLine();
@@ -219,8 +219,8 @@ public sealed class ParakeetServiceLauncher
         if (!stopProcess.Start())
         {
             throw new InvalidOperationException(
-                "Windows could not stop the existing " +
-                "Parakeet service through WSL.");
+                "The configured runtime could not stop the " +
+                "existing Parakeet service.");
         }
 
         using var shutdownCancellation =

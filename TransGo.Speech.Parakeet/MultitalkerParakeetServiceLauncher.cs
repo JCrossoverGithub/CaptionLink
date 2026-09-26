@@ -206,8 +206,8 @@ public sealed class MultitalkerParakeetServiceLauncher
             process.Dispose();
 
             throw new InvalidOperationException(
-                "Windows could not start the " +
-                "Multitalker service through WSL.");
+                "The configured runtime could not start the " +
+                "Multitalker service.");
         }
 
         process.BeginOutputReadLine();

@@ -4,8 +4,8 @@ using TransGo.Core.Runtime;
 namespace TransGo.Diarization.Sortformer;
 
 /// <summary>
-/// Starts the local Sortformer service through WSL and waits
-/// until the GPU model is ready.
+/// Starts the local Sortformer service through the configured
+/// runtime and waits until the GPU model is ready.
 /// </summary>
 public sealed class SortformerServiceLauncher
     : ISortformerServiceLauncher
@@ -127,15 +127,15 @@ public sealed class SortformerServiceLauncher
             process.Dispose();
 
             throw new InvalidOperationException(
-                "Windows could not start the Sortformer " +
-                "service through WSL.");
+                "The configured runtime could not start the " +
+                "Sortformer service.");
         }
 
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
         Debug.WriteLine(
-            "Started the Sortformer service through WSL.");
+            "Started the local Sortformer service.");
 
         return process;
     }

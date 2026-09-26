@@ -4,8 +4,8 @@ using TransGo.Core.Runtime;
 namespace TransGo.Diarization.Nemotron;
 
 /// <summary>
-/// Starts the local Nemotron service through WSL and waits
-/// until the GPU model is ready.
+/// Starts the local Nemotron service through the configured
+/// runtime and waits until the GPU model is ready.
 /// </summary>
 public sealed class NemotronServiceLauncher
     : INemotronServiceLauncher
@@ -135,15 +135,15 @@ public sealed class NemotronServiceLauncher
             process.Dispose();
 
             throw new InvalidOperationException(
-                "Windows could not start the Nemotron " +
-                "service through WSL.");
+                "The configured runtime could not start the " +
+                "Nemotron service.");
         }
 
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
         Debug.WriteLine(
-            "Started the Nemotron service through WSL.");
+            "Started the local Nemotron service.");
 
         return process;
     }
