@@ -71,19 +71,6 @@ public static class WslRuntime
         return startInfo;
     }
 
-    public static string QuoteShellArgument(
-        string value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-
-        return "'" +
-            value.Replace(
-                "'",
-                "'\"'\"'",
-                StringComparison.Ordinal) +
-            "'";
-    }
-
     private static string FindRepositoryRoot()
     {
         string? configuredRoot =

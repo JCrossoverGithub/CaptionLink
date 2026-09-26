@@ -145,9 +145,9 @@ public sealed class ParakeetServiceLauncher
             ">/dev/null 2>&1 || true; " +
             $"{NemoPythonSetup} " +
             "&& test -x \"$NEMO_PYTHON\" " +
-            $"&& cd {WslRuntime.QuoteShellArgument(repositoryDirectory)} " +
+            $"&& cd {PosixShell.QuoteArgument(repositoryDirectory)} " +
             $"&& export TRANSGO_PARAKEET_PROFILE=" +
-            $"{WslRuntime.QuoteShellArgument(serviceProfile)} " +
+            $"{PosixShell.QuoteArgument(serviceProfile)} " +
             "&& exec \"$NEMO_PYTHON\" " +
             "-m uvicorn parakeet_service:app " +
             "--host 127.0.0.1 " +

@@ -167,7 +167,7 @@ public sealed class MultitalkerParakeetServiceLauncher
         string command =
             $"{NemoPythonSetup} " +
             "&& test -x \"$NEMO_PYTHON\" " +
-            $"&& cd {WslRuntime.QuoteShellArgument(repositoryDirectory)} " +
+            $"&& cd {PosixShell.QuoteArgument(repositoryDirectory)} " +
             "&& exec \"$NEMO_PYTHON\" " +
             "-m uvicorn multitalker_service:app " +
             "--host 127.0.0.1 " +

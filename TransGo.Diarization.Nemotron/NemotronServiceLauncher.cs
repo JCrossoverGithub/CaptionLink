@@ -96,7 +96,7 @@ public sealed class NemotronServiceLauncher
             "&& test -d \"$HF_DEPS/transformers\" " +
             "&& export PYTHONNOUSERSITE=1 " +
             "&& export PYTHONPATH=\"$HF_DEPS\" " +
-            $"&& cd {WslRuntime.QuoteShellArgument(repositoryDirectory)} " +
+            $"&& cd {PosixShell.QuoteArgument(repositoryDirectory)} " +
             "&& exec \"$NEMO_PYTHON\" " +
             "-m uvicorn nemotron_service:app " +
             "--host 127.0.0.1 " +

@@ -88,7 +88,7 @@ public sealed class SortformerServiceLauncher
         string linuxServiceCommand =
             $"{NemoPythonSetup} " +
             "&& test -x \"$NEMO_PYTHON\" " +
-            $"&& cd {WslRuntime.QuoteShellArgument(repositoryDirectory)} " +
+            $"&& cd {PosixShell.QuoteArgument(repositoryDirectory)} " +
             "&& exec \"$NEMO_PYTHON\" " +
             "-m uvicorn sortformer_service:app " +
             "--host 127.0.0.1 " +
