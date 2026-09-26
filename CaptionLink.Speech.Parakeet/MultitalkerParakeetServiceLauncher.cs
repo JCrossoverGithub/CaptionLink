@@ -177,9 +177,9 @@ public sealed class MultitalkerParakeetServiceLauncher
         string command =
             $"{NemoPythonSetup} " +
             "&& test -x \"$NEMO_PYTHON\" " +
-            $"&& cd {PosixShell.QuoteArgument(repositoryDirectory)} " +
+            "&& cd \"$HOME\" " +
             "&& exec \"$NEMO_PYTHON\" " +
-            "-m uvicorn multitalker_service:app " +
+            $"-m uvicorn multitalker_service:app --app-dir {PosixShell.QuoteArgument(repositoryDirectory)} " +
             "--host 127.0.0.1 " +
             "--port 8768";
 
