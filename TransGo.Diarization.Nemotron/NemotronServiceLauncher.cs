@@ -8,7 +8,7 @@ namespace TransGo.Diarization.Nemotron;
 /// until the GPU model is ready.
 /// </summary>
 public sealed class NemotronServiceLauncher
-    : IAsyncDisposable
+    : INemotronServiceLauncher
 {
     private const string ServiceDirectoryName =
         "TransGo.LocalDiarization.Nemotron";

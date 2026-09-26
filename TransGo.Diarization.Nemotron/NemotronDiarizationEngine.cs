@@ -14,8 +14,8 @@ public sealed class NemotronDiarizationEngine
 {
     private readonly object _gate = new();
 
-    private readonly NemotronServiceLauncher
-        _serviceLauncher = new();
+    private readonly INemotronServiceLauncher
+        _serviceLauncher;
 
     private NemotronServiceClient? _client;
     private int? _configuredSampleRate;
@@ -23,6 +23,22 @@ public sealed class NemotronDiarizationEngine
     private bool _isStarting;
     private bool _isRunning;
     private bool _disposed;
+
+    public NemotronDiarizationEngine()
+        : this(
+            new NemotronServiceLauncher())
+    {
+    }
+
+    public NemotronDiarizationEngine(
+        INemotronServiceLauncher serviceLauncher)
+    {
+        ArgumentNullException.ThrowIfNull(
+            serviceLauncher);
+
+        _serviceLauncher =
+            serviceLauncher;
+    }
 
     public event EventHandler<SpeakerActivityEventArgs>?
         ActivityReceived;
