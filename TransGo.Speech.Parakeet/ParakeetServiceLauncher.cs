@@ -32,8 +32,23 @@ public sealed class ParakeetServiceLauncher
     private readonly ParakeetServiceHealthClient
         _healthClient = new();
 
+    private readonly ILocalServiceRuntime _runtime;
+
     private Process? _serviceProcess;
     private bool _disposed;
+
+    public ParakeetServiceLauncher()
+        : this(new WslLocalServiceRuntime())
+    {
+    }
+
+    public ParakeetServiceLauncher(
+        ILocalServiceRuntime runtime)
+    {
+        ArgumentNullException.ThrowIfNull(runtime);
+
+        _runtime = runtime;
+    }
 
     public Task<ParakeetServiceHealth> EnsureReadyAsync(
         CancellationToken cancellationToken = default)
@@ -129,14 +144,14 @@ public sealed class ParakeetServiceLauncher
                 StringComparison.OrdinalIgnoreCase);
     }
 
-    private static Process StartServiceProcess(
+    private Process StartServiceProcess(
         ParakeetStreamingProfile profile)
     {
         string serviceProfile =
             profile.ToServiceValue();
 
         string repositoryDirectory =
-            WslRuntime.GetLinuxRepositoryDirectory(
+            _runtime.GetRepositoryDirectory(
                 ServiceDirectoryName);
 
         string linuxServiceCommand =
@@ -154,7 +169,7 @@ public sealed class ParakeetServiceLauncher
             "--port 8765";
 
         var startInfo =
-            CreateWslStartInfo(
+            CreateServiceStartInfo(
                 linuxServiceCommand,
                 redirectOutput: true);
 
@@ -201,7 +216,7 @@ public sealed class ParakeetServiceLauncher
         using Process stopProcess =
             new()
             {
-                StartInfo = CreateWslStartInfo(
+                StartInfo = CreateServiceStartInfo(
                     stopCommand,
                     redirectOutput: false)
             };
@@ -312,12 +327,12 @@ public sealed class ParakeetServiceLauncher
             $"{StartupTimeout.TotalSeconds:0} seconds.");
     }
 
-    private static ProcessStartInfo CreateWslStartInfo(
-        string linuxCommand,
+    private ProcessStartInfo CreateServiceStartInfo(
+        string command,
         bool redirectOutput)
     {
-        return WslRuntime.CreateStartInfo(
-            linuxCommand,
+        return _runtime.CreateShellStartInfo(
+            command,
             redirectOutput);
     }
 
