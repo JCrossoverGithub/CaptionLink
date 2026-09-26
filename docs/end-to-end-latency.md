@@ -47,7 +47,7 @@ instrumented prototype is running.
 ## Tests
 
 ```powershell
-dotnet test .\TransGo.Remote.Protocol.Tests\TransGo.Remote.Protocol.Tests.csproj --configuration Release
-node --test .\TransGo.ChromeExtension\tests\protocol.test.mjs .\TransGo.ChromeExtension\tests\latency.test.mjs .\TransGo.ChromeExtension\tests\caption-state.test.mjs
-python -m py_compile .\TransGo.LocalAsr.Parakeet\parakeet_service.py
+dotnet test .\CaptionLink.Remote.Protocol.Tests\CaptionLink.Remote.Protocol.Tests.csproj --configuration Release
+node --test .\CaptionLink.ChromeExtension\tests\protocol.test.mjs .\CaptionLink.ChromeExtension\tests\latency.test.mjs .\CaptionLink.ChromeExtension\tests\caption-state.test.mjs
+python -m py_compile .\CaptionLink.LocalAsr.Parakeet\parakeet_service.py
 ```

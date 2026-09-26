@@ -1,0 +1,23 @@
+<Solution>
+  <Project Path="CaptionLink.Application.Tests/CaptionLink.Application.Tests.csproj" />
+  <Project Path="CaptionLink.Application/CaptionLink.Application.csproj" />
+  <Project Path="CaptionLink.Audio.Processing/CaptionLink.Audio.Processing.csproj" />
+  <Project Path="CaptionLink.Audio.Windows/CaptionLink.Audio.Windows.csproj" />
+  <Project Path="CaptionLink.Core/CaptionLink.Core.csproj" />
+  <Project Path="CaptionLink.Diarization.Simulated/CaptionLink.Diarization.Simulated.csproj" />
+  <Project Path="CaptionLink.Diarization.Sortformer/CaptionLink.Diarization.Sortformer.csproj" />
+  <Project Path="CaptionLink.Diarization.Nemotron/CaptionLink.Diarization.Nemotron.csproj" />
+  <Project Path="CaptionLink.OverlapDetection.Tests/CaptionLink.OverlapDetection.Tests.csproj" />
+  <Project Path="CaptionLink.OverlapBenchmark/CaptionLink.OverlapBenchmark.csproj" />
+  <Project Path="CaptionLink.GpuGateway/CaptionLink.GpuGateway.csproj" />
+  <Project Path="CaptionLink.OverlapBenchmark.Tests/CaptionLink.OverlapBenchmark.Tests.csproj" />
+  <Project Path="CaptionLink.OverlapTuner/CaptionLink.OverlapTuner.csproj" />
+  <Project Path="CaptionLink.Remote.Protocol.Tests/CaptionLink.Remote.Protocol.Tests.csproj" />
+  <Project Path="CaptionLink.Remote.Protocol/CaptionLink.Remote.Protocol.csproj" />
+  <Project Path="CaptionLink.Speech.Google/CaptionLink.Speech.Google.csproj" Id="d9371c1c-2916-4fff-b44b-d50d68c8252e" />
+  <Project Path="CaptionLink.Speech.Parakeet/CaptionLink.Speech.Parakeet.csproj" Id="3a20c9b6-a70f-426b-a2cb-a49e55a5a32e" />
+  <Project Path="CaptionLink.Speech.Remote/CaptionLink.Speech.Remote.csproj" />
+  <Project Path="CaptionLink.Speech.Sherpa/CaptionLink.Speech.Sherpa.csproj" Id="9a4657ea-9b86-456e-bf04-ab5ae2511634" />
+  <Project Path="CaptionLink.Whisper.Probe/CaptionLink.Whisper.Probe.csproj" Id="d0a6abd9-8423-403d-9dcb-de0e6d392478" />
+  <Project Path="CaptionLink.Windows/CaptionLink.Windows.csproj" />
+</Solution>

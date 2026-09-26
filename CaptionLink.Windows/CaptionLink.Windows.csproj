@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CaptionLink.Audio.Processing\CaptionLink.Audio.Processing.csproj" />
+    <ProjectReference Include="..\CaptionLink.Core\CaptionLink.Core.csproj" />
+    <ProjectReference Include="..\CaptionLink.Audio.Windows\CaptionLink.Audio.Windows.csproj" />
+    <ProjectReference Include="..\CaptionLink.Speech.Google\CaptionLink.Speech.Google.csproj" />
+    <ProjectReference Include="..\CaptionLink.Speech.Parakeet\CaptionLink.Speech.Parakeet.csproj" />
+    <ProjectReference Include="..\CaptionLink.Speech.Remote\CaptionLink.Speech.Remote.csproj" />
+    <ProjectReference Include="..\CaptionLink.Speech.Sherpa\CaptionLink.Speech.Sherpa.csproj" />
+    <ProjectReference Include="..\CaptionLink.Diarization.Simulated\CaptionLink.Diarization.Simulated.csproj" />
+    <ProjectReference Include="..\CaptionLink.Diarization.Sortformer\CaptionLink.Diarization.Sortformer.csproj" />
+    <ProjectReference Include="..\CaptionLink.Diarization.Nemotron\CaptionLink.Diarization.Nemotron.csproj" />
+    <ProjectReference Include="..\CaptionLink.Application\CaptionLink.Application.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -54,9 +54,9 @@ A client can capture audio on another device, stream normalized PCM audio to a G
 
 See:
 
-- [Remote-session protocol](TransGo.Remote.Protocol/PROTOCOL.md)
+- [Remote-session protocol](CaptionLink.Remote.Protocol/PROTOCOL.md)
 - [End-to-end caption latency](docs/end-to-end-latency.md)
-- [Chrome extension prototype](TransGo.ChromeExtension/README.md)
+- [Chrome extension prototype](CaptionLink.ChromeExtension/README.md)
 
 ### Speaker overlap and diarization research
 
@@ -80,19 +80,19 @@ The cross-platform work is intentionally not a WPF port. Reusable captioning beh
 TransGo is split into reusable application/core layers and platform/provider implementations.
 
 ~~~text
-TransGo.Windows
+CaptionLink.Windows
     Windows UI
     WASAPI audio capture
     Windows/WSL composition
             |
             v
-TransGo.Application
+CaptionLink.Application
     caption-session lifecycle
     normalized audio routing
     transcription + diarization coordination
             |
             v
-TransGo.Core
+CaptionLink.Core
     audio models
     transcription contracts
     diarization contracts
@@ -114,21 +114,21 @@ Some of the main projects are:
 
 | Project | Purpose |
 | --- | --- |
-| `TransGo.Windows` | Windows WPF desktop host |
-| `TransGo.Application` | Reusable live caption-session orchestration |
-| `TransGo.Core` | Shared audio, transcription, diarization, and runtime contracts |
-| `TransGo.Audio.Windows` | WASAPI/Windows audio capture |
-| `TransGo.Audio.Processing` | Shared audio normalization and processing |
-| `TransGo.Speech.Parakeet` | Parakeet and Multitalker transcription engines/launchers |
-| `TransGo.Diarization.Nemotron` | Nemotron 3 diarization integration |
-| `TransGo.Diarization.Sortformer` | Sortformer diarization integration |
-| `TransGo.Speech.Remote` | Remote GPU transcription client |
-| `TransGo.GpuGateway` | Remote transcription gateway |
-| `TransGo.Remote.Protocol` | Shared remote-session protocol |
-| `TransGo.ChromeExtension` | Browser captioning prototype |
-| `TransGo.OverlapBenchmark` | Speaker-overlap evaluation tooling |
+| `CaptionLink.Windows` | Windows WPF desktop host |
+| `CaptionLink.Application` | Reusable live caption-session orchestration |
+| `CaptionLink.Core` | Shared audio, transcription, diarization, and runtime contracts |
+| `CaptionLink.Audio.Windows` | WASAPI/Windows audio capture |
+| `CaptionLink.Audio.Processing` | Shared audio normalization and processing |
+| `CaptionLink.Speech.Parakeet` | Parakeet and Multitalker transcription engines/launchers |
+| `CaptionLink.Diarization.Nemotron` | Nemotron 3 diarization integration |
+| `CaptionLink.Diarization.Sortformer` | Sortformer diarization integration |
+| `CaptionLink.Speech.Remote` | Remote GPU transcription client |
+| `CaptionLink.GpuGateway` | Remote transcription gateway |
+| `CaptionLink.Remote.Protocol` | Shared remote-session protocol |
+| `CaptionLink.ChromeExtension` | Browser captioning prototype |
+| `CaptionLink.OverlapBenchmark` | Speaker-overlap evaluation tooling |
 
-The `TransGo.LocalAsr.*` and `TransGo.LocalDiarization.*` directories contain the Python services used by the local GPU integrations.
+The `CaptionLink.LocalAsr.*` and `CaptionLink.LocalDiarization.*` directories contain the Python services used by the local GPU integrations.
 
 ## Development requirements
 
@@ -150,15 +150,15 @@ Detailed setup instructions are in [docs/setup-windows.md](docs/setup-windows.md
 The short version is:
 
 ~~~powershell
-git clone https://github.com/JCrossoverGithub/TransGo-Desktop.git
-cd TransGo-Desktop
+git clone https://github.com/JCrossoverGithub/CaptionLink.git
+cd CaptionLink
 
 .\scripts\doctor.ps1
 wsl bash ./scripts/bootstrap-wsl.sh
 
-dotnet restore .\TransGo.Desktop.slnx
-dotnet build .\TransGo.Desktop.slnx -c Release
-dotnet test .\TransGo.Desktop.slnx -c Release --no-build
+dotnet restore .\CaptionLink.slnx
+dotnet build .\CaptionLink.slnx -c Release
+dotnet test .\CaptionLink.slnx -c Release --no-build
 ~~~
 
 `bootstrap-wsl.sh` creates the pinned local GPU runtime under the user's XDG data directory, normally:
@@ -177,11 +177,11 @@ From the repository root:
 
 ~~~powershell
 dotnet run `
-  --project .\TransGo.Windows\TransGo.Windows.csproj `
+  --project .\CaptionLink.Windows\CaptionLink.Windows.csproj `
   -c Release
 ~~~
 
-For repository discovery, TransGo normally finds `TransGo.Desktop.slnx` by walking upward from the current directory or application directory.
+For repository discovery, TransGo normally finds `CaptionLink.slnx` by walking upward from the current directory or application directory.
 
 If needed, set:
 
@@ -228,8 +228,8 @@ The Chrome extension currently stores its development gateway token locally in C
 Build and run the standard .NET test projects with:
 
 ~~~powershell
-dotnet build .\TransGo.Desktop.slnx -c Release
-dotnet test .\TransGo.Desktop.slnx -c Release --no-build
+dotnet build .\CaptionLink.slnx -c Release
+dotnet test .\CaptionLink.slnx -c Release --no-build
 ~~~
 
 Additional benchmark/test runners and Chrome protocol tests are exercised by CI.

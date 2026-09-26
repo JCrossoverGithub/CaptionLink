@@ -24,7 +24,7 @@ jobs:
 
       - name: Publish self-contained application
         shell: pwsh
-        run: dotnet publish TransGo.Windows/TransGo.Windows.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --output publish/TransGo-win-x64
+        run: dotnet publish CaptionLink.Windows/CaptionLink.Windows.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --output publish/TransGo-win-x64
 
       - name: Create release archive
         shell: pwsh

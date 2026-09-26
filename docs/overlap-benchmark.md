@@ -27,7 +27,7 @@ Close TransGo before starting because the Sortformer service accepts one session
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapBenchmark\TransGo.OverlapBenchmark.csproj `
+  --project .\CaptionLink.OverlapBenchmark\CaptionLink.OverlapBenchmark.csproj `
   --configuration Release `
   -- `
   --audio-dir .\benchmark-data\VoxConverse\audio\dev `
@@ -42,7 +42,7 @@ The first run may take up to 90 seconds to load Sortformer. The benchmark proces
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapBenchmark\TransGo.OverlapBenchmark.csproj `
+  --project .\CaptionLink.OverlapBenchmark\CaptionLink.OverlapBenchmark.csproj `
   --configuration Release `
   -- `
   --audio-dir .\benchmark-data\VoxConverse\audio\dev `
@@ -62,7 +62,7 @@ or any recording fails, rerun the same command with `--resume`:
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapBenchmark\TransGo.OverlapBenchmark.csproj `
+  --project .\CaptionLink.OverlapBenchmark\CaptionLink.OverlapBenchmark.csproj `
   --configuration Release `
   --no-build `
   -- `
@@ -93,7 +93,7 @@ Accelerated input can queue audio ahead of GPU inference and invalidate a 30-sec
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapBenchmark\TransGo.OverlapBenchmark.csproj `
+  --project .\CaptionLink.OverlapBenchmark\CaptionLink.OverlapBenchmark.csproj `
   --configuration Release `
   -- `
   --audio-dir .\benchmark-data\VoxConverse\audio\dev `
@@ -119,7 +119,7 @@ once more with `--trace-dir`. The GPU is required for this capture pass.
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapBenchmark\TransGo.OverlapBenchmark.csproj `
+  --project .\CaptionLink.OverlapBenchmark\CaptionLink.OverlapBenchmark.csproj `
   --configuration Release `
   -- `
   --audio-dir .\benchmark-data\VoxConverse\audio\dev `
@@ -143,7 +143,7 @@ and WebSocket traffic.
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapTuner\TransGo.OverlapTuner.csproj `
+  --project .\CaptionLink.OverlapTuner\CaptionLink.OverlapTuner.csproj `
   --configuration Release `
   -- `
   --trace-dir .\benchmark-traces\voxconverse-dev-v2.1 `
@@ -219,7 +219,7 @@ Capture raw test-set probabilities. This is the only GPU pass:
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapBenchmark\TransGo.OverlapBenchmark.csproj `
+  --project .\CaptionLink.OverlapBenchmark\CaptionLink.OverlapBenchmark.csproj `
   --configuration Release `
   --no-build `
   -- `
@@ -234,7 +234,7 @@ recording has a trace, perform the locked CPU comparison:
 
 ```powershell
 dotnet run `
-  --project .\TransGo.OverlapTuner\TransGo.OverlapTuner.csproj `
+  --project .\CaptionLink.OverlapTuner\CaptionLink.OverlapTuner.csproj `
   --configuration Release `
   --no-build `
   -- `
