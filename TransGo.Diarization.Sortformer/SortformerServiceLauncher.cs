@@ -29,8 +29,23 @@ public sealed class SortformerServiceLauncher
     private readonly SortformerServiceHealthClient
         _healthClient = new();
 
+    private readonly ILocalServiceRuntime _runtime;
+
     private Process? _serviceProcess;
     private bool _disposed;
+
+    public SortformerServiceLauncher()
+        : this(new WslLocalServiceRuntime())
+    {
+    }
+
+    public SortformerServiceLauncher(
+        ILocalServiceRuntime runtime)
+    {
+        ArgumentNullException.ThrowIfNull(runtime);
+
+        _runtime = runtime;
+    }
 
     public async Task<SortformerServiceHealth>
         EnsureReadyAsync(
@@ -79,10 +94,10 @@ public sealed class SortformerServiceLauncher
         }
     }
 
-    private static Process StartServiceProcess()
+    private Process StartServiceProcess()
     {
         string repositoryDirectory =
-            WslRuntime.GetLinuxRepositoryDirectory(
+            _runtime.GetRepositoryDirectory(
                 ServiceDirectoryName);
 
         string linuxServiceCommand =
@@ -95,7 +110,7 @@ public sealed class SortformerServiceLauncher
             "--port 8766";
 
         ProcessStartInfo startInfo =
-            CreateWslStartInfo(
+            CreateServiceStartInfo(
                 linuxServiceCommand,
                 redirectOutput: true);
 
@@ -174,12 +189,12 @@ public sealed class SortformerServiceLauncher
             $"{StartupTimeout.TotalSeconds:0} seconds.");
     }
 
-    private static ProcessStartInfo CreateWslStartInfo(
-        string linuxCommand,
+    private ProcessStartInfo CreateServiceStartInfo(
+        string command,
         bool redirectOutput)
     {
-        return WslRuntime.CreateStartInfo(
-            linuxCommand,
+        return _runtime.CreateShellStartInfo(
+            command,
             redirectOutput);
     }
 
