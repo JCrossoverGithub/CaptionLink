@@ -1,3 +1,6 @@
+using TransGo.Diarization.Nemotron;
+using TransGo.Diarization.Sortformer;
+
 namespace TransGo.OverlapBenchmark;
 
 internal static class Program
@@ -33,7 +36,20 @@ internal static class Program
                 options.OutputDirectory);
 
             var runner =
-                new VoxConverseBenchmarkRunner(options);
+                new VoxConverseBenchmarkRunner(
+                    options,
+                    backend => backend switch
+                    {
+                        DiarizationBackend.Sortformer =>
+                            new SortformerDiarizationEngine(),
+
+                        DiarizationBackend.Nemotron =>
+                            new NemotronDiarizationEngine(),
+
+                        _ => throw new InvalidOperationException(
+                            $"Unsupported diarization engine: " +
+                            $"{backend}."),
+                    });
 
             var checkpointStore =
                 new BenchmarkCheckpointStore(options);

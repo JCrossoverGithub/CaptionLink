@@ -12,10 +12,21 @@ public sealed class VoxConverseBenchmarkRunner
 
     private readonly BenchmarkOptions _options;
 
+    private readonly Func<
+        DiarizationBackend,
+        IDiarizationEngine> _engineFactory;
+
     public VoxConverseBenchmarkRunner(
-        BenchmarkOptions options)
+        BenchmarkOptions options,
+        Func<
+            DiarizationBackend,
+            IDiarizationEngine> engineFactory)
     {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(engineFactory);
+
         _options = options;
+        _engineFactory = engineFactory;
     }
 
     public async Task<BenchmarkRunSnapshot>
@@ -516,18 +527,8 @@ public sealed class VoxConverseBenchmarkRunner
 
     private IDiarizationEngine CreateDiarizationEngine()
     {
-        return _options.Engine switch
-        {
-            DiarizationBackend.Sortformer =>
-                new SortformerDiarizationEngine(),
-
-            DiarizationBackend.Nemotron =>
-                new NemotronDiarizationEngine(),
-
-            _ => throw new InvalidOperationException(
-                $"Unsupported diarization engine: " +
-                $"{_options.Engine}."),
-        };
+        return _engineFactory(
+            _options.Engine);
     }
 
     private RecordingInput[] ResolveInputs()
