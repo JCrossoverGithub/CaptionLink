@@ -500,3 +500,7 @@ benchmark-data/
 benchmark-results/
 benchmark-traces/
 .benchmark-downloads/
+
+# Local TransGo development scratch files
+/nano-test.txt
+/parakeet_launcher_context.txt
