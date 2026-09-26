@@ -4,7 +4,7 @@ using TransGo.Core.Runtime;
 
 namespace TransGo.Speech.Parakeet;
 
-internal sealed class MultitalkerParakeetServiceLauncher
+public sealed class MultitalkerParakeetServiceLauncher
     : IMultitalkerParakeetServiceLauncher
 {
     private const string ServiceDirectoryName =

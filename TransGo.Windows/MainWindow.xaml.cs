@@ -260,10 +260,12 @@ public partial class MainWindow : Window
                 new SimulatedDiarizationEngine(),
 
             "sortformer" =>
-                new SortformerDiarizationEngine(),
+                new SortformerDiarizationEngine(
+                    new SortformerServiceLauncher()),
 
             "nemotron" =>
-                new NemotronDiarizationEngine(),
+                new NemotronDiarizationEngine(
+                    new NemotronServiceLauncher()),
 
             _ => null,
         };
@@ -482,10 +484,12 @@ public partial class MainWindow : Window
 
             "parakeet" =>
                 new ParakeetStreamingTranscriptionEngine(
-                    GetSelectedParakeetProfile()),
+                    GetSelectedParakeetProfile(),
+                    new ParakeetServiceLauncher()),
 
             "multitalker-parakeet" =>
-                new MultitalkerParakeetTranscriptionEngine(),
+                new MultitalkerParakeetTranscriptionEngine(
+                    new MultitalkerParakeetServiceLauncher()),
 
             "remote" =>
                 new RemoteTranscriptionEngine(),
