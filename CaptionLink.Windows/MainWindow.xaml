@@ -305,6 +305,9 @@
                                 <ComboBoxItem Content="Local — Parakeet GPU"
                                 Tag="parakeet"/>
 
+                                <ComboBoxItem Content="GPULink — Multitalker GPU (Experimental)"
+                                Tag="gpulink-multitalker"/>
+
                                 <ComboBoxItem Content="Remote — CaptionLink GPU Gateway"
                                 Tag="remote"/>
 
