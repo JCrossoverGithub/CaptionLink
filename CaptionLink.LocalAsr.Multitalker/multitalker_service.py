@@ -146,7 +146,10 @@ class StreamingPcmResampler:
         )
 
 
-def build_models():
+def build_models(*, asr_checkpoint: str | None = None,
+                 diar_checkpoint: str | None = None):
+    if (asr_checkpoint is None) != (diar_checkpoint is None):
+        raise ValueError("Both local checkpoints must be supplied together")
     if not torch.cuda.is_available():
         raise RuntimeError(
             "CUDA is not available. "
@@ -164,26 +167,31 @@ def build_models():
         flush=True,
     )
 
-    asr_model = (
-        nemo_asr.models.ASRModel
-        .from_pretrained(
-            model_name=ASR_MODEL_NAME
+    if asr_checkpoint is None:
+        asr_model = nemo_asr.models.ASRModel.from_pretrained(
+            model_name=ASR_MODEL_NAME,
         )
-        .to(device)
-        .eval()
-    )
+    else:
+        asr_model = nemo_asr.models.ASRModel.restore_from(
+            restore_path=asr_checkpoint,
+            map_location="cpu",
+        )
+    asr_model = asr_model.to(device).eval()
 
     print(
         f"Loading {DIAR_MODEL_NAME}...",
         flush=True,
     )
 
-    diar_model = (
-        SortformerEncLabelModel
-        .from_pretrained(
-            model_name=DIAR_MODEL_NAME
+    if diar_checkpoint is None:
+        diar_model = SortformerEncLabelModel.from_pretrained(
+            model_name=DIAR_MODEL_NAME,
         )
-    )
+    else:
+        diar_model = SortformerEncLabelModel.restore_from(
+            restore_path=diar_checkpoint,
+            map_location="cpu",
+        )
 
     diar_dtype = (
         torch.bfloat16
