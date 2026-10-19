@@ -85,6 +85,7 @@ public partial class MainWindow : Window
     private bool _shutdownComplete;
 
     private int _transcriptionDisconnectHandled;
+    private Exception? _gpulinkStreamFailure;
 
     private readonly ConcurrentDictionary<
     string,
@@ -156,10 +157,8 @@ public partial class MainWindow : Window
 
     private bool IsMultitalkerProviderSelected()
     {
-        return string.Equals(
-            GetSelectedProviderId(),
-            "multitalker-parakeet",
-            StringComparison.OrdinalIgnoreCase);
+        return GetSelectedProviderId() is
+            "multitalker-parakeet" or "gpulink-multitalker";
     }
 
     private bool IsStandardParakeetProviderSelected()
@@ -494,6 +493,9 @@ public partial class MainWindow : Window
                 new MultitalkerParakeetTranscriptionEngine(
                     new MultitalkerParakeetServiceLauncher(LocalServiceRuntime)),
 
+            "gpulink-multitalker" =>
+                new GPULinkDesktopTranscriptionEngine(),
+
             "remote" =>
                 new RemoteTranscriptionEngine(),
 
@@ -632,6 +634,9 @@ public partial class MainWindow : Window
                 "Local — Multitalker Parakeet" =>
                     "Preparing Multitalker Parakeet + Nemotron 3…",
 
+                "GPULink — Multitalker GPU (Experimental)" =>
+                    "Connecting to GPULink Multitalker worker…",
+
                 "Remote — CaptionLink GPU Gateway" =>
                     "Connecting to CaptionLink GPU gateway…",
 
@@ -649,6 +654,10 @@ public partial class MainWindow : Window
 
         engine.ResultReceived +=
             TranscriptionEngine_ResultReceived;
+
+        _gpulinkStreamFailure = null;
+        if (engine is GPULinkDesktopTranscriptionEngine gpulinkDesktop)
+            gpulinkDesktop.StreamFailed += GPULinkStreamFailed;
 
         if (engine is ISpeakerActivitySource
             speakerActivitySource)
@@ -921,6 +930,12 @@ public partial class MainWindow : Window
                 chunk);
         }
 
+        catch (Exception exception)
+            when (engine is GPULinkDesktopTranscriptionEngine)
+        {
+            GPULinkStreamFailed(exception);
+            return;
+        }
         catch (InvalidOperationException exception)
             when (
                 exception.Message.Contains(
@@ -1723,6 +1738,31 @@ public partial class MainWindow : Window
         }));
     }
 
+    // The audio callback and network sender can fail on non-UI threads.
+    // Never drop a GPULink stream fault and report "Stopped" as success.
+    private void GPULinkStreamFailed(Exception error)
+    {
+        if (_shutdownInProgress) return;
+        if (Interlocked.Exchange(ref _transcriptionDisconnectHandled, 1) != 0) return;
+        _gpulinkStreamFailure = error;
+        Debug.WriteLine("GPULink streaming failed: " + error);
+        _ = Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (_shutdownInProgress) return;
+            StatusText.Text = "GPULink audio streaming failed";
+            StopButton.IsEnabled = false;
+            if (_captureEngine.IsCapturing)
+            {
+                try { _captureEngine.Stop(); }
+                catch (Exception stopError)
+                {
+                    Debug.WriteLine("GPULink capture stop failed: " + stopError);
+                    StatusText.Text = "Could not stop failed GPULink capture";
+                }
+            }
+        }));
+    }
+
     private async void CaptureEngine_CaptureStopped(
         object? sender,
         AudioCaptureStoppedEventArgs e)
@@ -1798,6 +1838,17 @@ public partial class MainWindow : Window
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
 
+                return;
+            }
+
+            if (_gpulinkStreamFailure is not null)
+            {
+                StatusText.Text = "GPULink audio streaming failed";
+                MessageBox.Show(
+                    _gpulinkStreamFailure.Message,
+                    "GPULink stream error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
                 return;
             }
 
@@ -1946,6 +1997,9 @@ public partial class MainWindow : Window
         }
         finally
         {
+            if (engine is GPULinkDesktopTranscriptionEngine gpulinkDesktop)
+                gpulinkDesktop.StreamFailed -= GPULinkStreamFailed;
+
             if (engine is ISpeakerActivitySource
                 speakerActivitySource)
             {

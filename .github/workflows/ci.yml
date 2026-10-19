@@ -41,6 +41,29 @@ jobs:
       - name: Run .NET tests
         run: dotnet test CaptionLink.slnx --configuration Release --no-build
 
+      - name: Run GPULink wire protocol checks
+        run: dotnet run --project CaptionLink.Speech.GPULink.Wire.Tests/CaptionLink.Speech.GPULink.Wire.Tests.csproj --configuration Release
+
+      - name: Run GPULink resampler checks
+        run: dotnet run --project CaptionLink.Audio.Processing.Resampler.Tests/CaptionLink.Audio.Processing.Resampler.Tests.csproj --configuration Release
+
+      - name: Run GPULink ordered streaming pump checks
+        run: dotnet run --project CaptionLink.Audio.Processing.StreamPump.Tests/CaptionLink.Audio.Processing.StreamPump.Tests.csproj --configuration Release
+
+      - name: Run GPULink provider checks against public NuGet
+        run: dotnet run --project CaptionLink.Speech.GPULink.Provider.Tests/CaptionLink.Speech.GPULink.Provider.Tests.csproj --configuration Release
+
+      - name: Set up Python for GPULink adapter checks
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Run GPULink Multitalker offline adapter checks
+        run: python -m unittest discover -s tests -p test_gpulink_multitalker_adapter.py -v
+
+      - name: Run GPULink operator-review checks
+        run: node --test tools/gpulink-multitalker/test/prepare-operator-review.test.mjs
+
       - name: Run Chrome extension tests
         run: node --test CaptionLink.ChromeExtension/tests/protocol.test.mjs CaptionLink.ChromeExtension/tests/latency.test.mjs CaptionLink.ChromeExtension/tests/caption-state.test.mjs
 

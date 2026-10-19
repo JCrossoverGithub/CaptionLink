@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "manifest": {
+    "schemaVersion": 2,
+    "type": "speech.streaming.multitalker",
+    "adapterId": "captionlink.multitalker.parakeet.v0",
+    "version": "0.1.0",
+    "executionMode": "streaming-gateway"
+  },
+  "entry": "gpulink_multitalker_adapter.py",
+  "completionMode": "explicit-text-v1"
+}
