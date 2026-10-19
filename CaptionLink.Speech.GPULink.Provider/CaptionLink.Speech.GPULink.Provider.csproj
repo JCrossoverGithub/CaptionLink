@@ -7,9 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CaptionLink.Speech.GPULink\CaptionLink.Speech.GPULink.csproj" />
-    <ProjectReference Include="$(GPULinkClientProject)" Condition="'$(GPULinkClientProject)' != ''" />
+    <PackageReference Include="GPULink.Client" Version="[0.1.0-preview.1]" />
   </ItemGroup>
-  <Target Name="RequireApprovedGPULinkClient" BeforeTargets="ResolveReferences" Condition="'$(GPULinkClientProject)' == ''">
-    <Error Text="Specify -p:GPULinkClientProject=path/to/GPULink.Client.csproj. This is a development checkout reference, not a published dependency." />
-  </Target>
 </Project>
